@@ -45,3 +45,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and button taps fire commands to the Mac.
 - **M5Paper legend verified on hardware (2026-10-11):** the e-ink legend tracks the
   CoreS3's active profile and updates on swipe.
+- **Dongle status LCD verified on hardware (2026-10-11):** the T-Dongle S3's ST7735
+  shows the last action + packet count and updates on each tap; BOOT toggles HID.
