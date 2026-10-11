@@ -58,3 +58,14 @@ proves the radio runs concurrently with the USB keyboard. Dongle MAC: `F0:9E:9E:
 - StickC Button A cycles the metric; the CoreS3 Monitor page sets it over ESP-NOW.
   (GPU is best-effort via ioreg; MEM/CPU/DISK are reliable.) Tune `RAM_LEDS` /
   `RAM_DATA_PIN` build flags for other strips.
+
+## TV IR control (StickC Plus2 -> Sharp/Hisense LC-50P7000U)
+- The "Sharp" LC-50P7000U is **Hisense-made** and uses **Hisense NEC codes** (not Sharp/Roku).
+- StickC IR TX on GPIO19 (onboard LED, weak — aim close; an external IR LED + transistor
+  would add range). Send via `irsend.sendNEC(irsend.encodeNEC(0x04, cmd))` — encodeNEC is
+  required for correct NEC byte order in IRremoteESP8266.
+- Hisense discrete IR (address 0x04): Power toggle 0x70, Power On 0x71, Power Off 0x72,
+  Input 0x73, Home 0x8E, Menu 0x8D, Vol- 0xA5, Vol+ 0xA6, PIP-Input 0xAA. (Mute not in the
+  discrete list — currently best-guess 0x49.)
+- For other TVs: capture the remote with an IR receiver (TSOP38238 + IRrecvDumpV2) and swap
+  the codes in `src/stickc/main.cpp` blastIR().
