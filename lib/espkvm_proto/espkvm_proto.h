@@ -20,6 +20,7 @@ enum class Cmd : uint8_t {
   MOUSE_BTN   = 4,   // button mask + pressed flag
   SCROLL      = 5,   // int8 vertical, horizontal
   MEDIA       = 6,   // consumer-control usage (play/pause, volume, ...)
+  ANNOUNCE    = 100, // controller -> M5Paper: profile/button context
   STATUS      = 200, // dongle -> controller heartbeat
 };
 
@@ -71,6 +72,7 @@ struct MouseMove { int8_t dx; int8_t dy; };
 struct Scroll    { int8_t v;  int8_t h;  };
 struct MouseBtn  { uint8_t buttons; uint8_t pressed; };
 struct Status    { uint8_t linked; uint8_t hid_enabled; int8_t rssi; };
+struct Announce  { uint8_t profile; uint8_t button; }; // button 0xFF = profile switch only
 #pragma pack(pop)
 
 // Build a packet from an arbitrary payload struct.

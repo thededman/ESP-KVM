@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Phase 4 (in progress) — LVGL UI:** CoreS3 touch deck rebuilt in LVGL with a
   status bar (battery), and three swipeable profile pages (Dev / System / Snippets)
   of styled rounded buttons. Shared special-key codes added to the protocol.
+- **M5Paper e-ink node:** an `ANNOUNCE` protocol message + a shared macro table
+  (`espkvm_macros.h`) let the CoreS3 tell the M5Paper the active profile and fired
+  button; the M5Paper renders the profile's button legend and a log of recent
+  actions. The dongle ignores `ANNOUNCE`.
 
 ### Fixed
 - Dongle build: strip the board's `ARDUINO_USB_MODE=1` via `build_unflags` so TinyUSB
@@ -39,3 +43,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ESP-NOW → USB-HID path working.
 - **Phase 4 LVGL deck verified on hardware (2026-10-11):** swipe between profiles
   and button taps fire commands to the Mac.
+- **M5Paper legend verified on hardware (2026-10-11):** the e-ink legend tracks the
+  CoreS3's active profile and updates on swipe.
