@@ -24,3 +24,7 @@ flashing/hardware work here manually.)
   confirmed end-to-end on hardware: CoreS3 "Hello" tap typed into the Mac. Noted a
   USB-hub flashing hiccup (retry fixed it) and both device MACs for pairing.
   (Estimate — adjust to actual.)
+- 2026-10-11 — 1.5h — Phase 4 LVGL glow-up. Integrated LVGL 8.4 with M5Unified
+  (flush + touch glue, lv_conf), rebuilt the CoreS3 UI: status bar w/ battery and a
+  swipeable 3-profile tileview (Dev/System/Snippets) of styled buttons. Verified on
+  hardware: swipe + button taps work. (Estimate — adjust to actual.)
