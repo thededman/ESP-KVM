@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-11
+
 ### Added
 - Project scaffold: PlatformIO dual-environment build (`dongle` + `controller`) on the
   pioarduino platform (arduino-esp32 3.x).
@@ -60,3 +62,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Core2 tracks PRESENT/AWAY, and arming + walking away locked the Mac via the dongle.
 - **System monitor verified on hardware (2026-10-11):** StickC Button A cycles
   MEM/GPU/CPU/DISK and the CoreS3 Monitor page switches the metric over ESP-NOW.
+
+[Unreleased]: https://github.com/thededman/ESP-KVM/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/thededman/ESP-KVM/releases/tag/v0.1.0
