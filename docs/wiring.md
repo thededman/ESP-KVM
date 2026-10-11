@@ -50,10 +50,11 @@ proves the radio runs concurrently with the USB keyboard. Dongle MAC: `F0:9E:9E:
   and fires **System > Lock** (⌃⌘Q) over ESP-NOW after 15s AWAY while ARMED.
 - Core2 (board `m5stack-core2`) and UnitV2 both flash/power over their USB-C normally.
 
-## RAM meter: M5StickC Plus2 + SK6812 flex strip
+## System monitor: M5StickC Plus2 + SK6812 flex strip
 - Strip (30x SK6812) connects to the **StickC Plus2 grove port**; data on **G32**.
-- StickC tethers to the Mac over USB. Run `tools/ram-meter.sh /dev/cu.usbserial-XXXX`
-  on the Mac: it reads `memory_pressure` and streams `R<used%>` lines @115200.
+- StickC tethers to the Mac over USB. Run `tools/sysmon.sh /dev/cu.usbserial-XXXX`
+  on the Mac: it reads MEM/GPU/CPU/DISK and streams `S <mem> <gpu> <cpu> <disk>` @115200.
   (The script opens the port *then* sets the baud — macOS resets termios on open.)
-- Firmware shows the % + bar on the StickC screen and the strip as a green->amber->red
-  progress bar. Tune `RAM_LEDS` / `RAM_DATA_PIN` build flags for other strips.
+- StickC Button A cycles the metric; the CoreS3 Monitor page sets it over ESP-NOW.
+  (GPU is best-effort via ioreg; MEM/CPU/DISK are reliable.) Tune `RAM_LEDS` /
+  `RAM_DATA_PIN` build flags for other strips.
