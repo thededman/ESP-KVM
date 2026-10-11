@@ -4,6 +4,8 @@
 // value on-screen. Button A cycles the metric; the CoreS3 can also set it via ESP-NOW.
 #include <M5Unified.h>
 #include <Adafruit_NeoPixel.h>
+#include <IRremoteESP8266.h>
+#include <IRsend.h>
 #include <WiFi.h>
 #include <esp_now.h>
 #include <esp_wifi.h>
@@ -19,9 +21,16 @@ using namespace espkvm;
 #ifndef RAM_DATA_PIN
 #define RAM_DATA_PIN 32
 #endif
+#ifndef IR_TX_PIN
+#define IR_TX_PIN 19
+#endif
 static constexpr uint8_t ESPNOW_CHAN = 1;
 
 static Adafruit_NeoPixel strip(RAM_LEDS, RAM_DATA_PIN, NEO_GRB + NEO_KHZ800);
+static IRsend   irsend(IR_TX_PIN);
+static volatile uint8_t g_irCmd = 0xFF;
+static const char* g_irLabel = "";
+static uint32_t g_irFlash = 0;
 static M5Canvas canvas(&M5.Display);
 static int      g_val[MET_COUNT] = { -1, -1, -1, -1 };
 static uint8_t  g_metric = MET_MEM;
@@ -32,8 +41,17 @@ static volatile uint8_t g_setMetric = 0xFF;   // from ESP-NOW (applied in loop)
 void onEspNow(const esp_now_recv_info_t*, const uint8_t* data, int len) {
   if (len != (int)sizeof(Packet)) return;
   Packet p; memcpy(&p, data, sizeof(p));
-  if (valid(p) && (Cmd)p.type == Cmd::SET_METRIC && p.len >= 1 && p.payload[0] < MET_COUNT)
+  if (!valid(p)) return;
+  if ((Cmd)p.type == Cmd::SET_METRIC && p.len >= 1 && p.payload[0] < MET_COUNT) {
     g_setMetric = p.payload[0];
+  } else if ((Cmd)p.type == Cmd::STATS && p.len >= sizeof(Stats)) {
+    const Stats* st = reinterpret_cast<const Stats*>(p.payload);
+    g_val[MET_MEM] = st->mem; g_val[MET_GPU] = st->gpu;
+    g_val[MET_CPU] = st->cpu; g_val[MET_DISK] = st->disk;
+    g_lastData = millis();   // wireless stats arrived
+  } else if ((Cmd)p.type == Cmd::IR && p.len >= 1) {
+    g_irCmd = p.payload[0];  // blast in loop (IR send is blocking)
+  }
 }
 
 static void colorFor(int u, uint8_t& r, uint8_t& g, uint8_t& b) {
@@ -72,8 +90,26 @@ static void drawScreen() {
   d.fillRect(x + 1, y + 1, (w - 2) * uu / 100, h - 2, c);
   d.setTextSize(1); d.setTextColor(0x8C71, TFT_BLACK);
   d.setCursor(6, canvas.height() - 12);
-  d.printf("BtnA=cycle  rx:%lu", (unsigned long)g_rxBytes);
+  if (millis() - g_irFlash < 1500) d.printf("TV: %s", g_irLabel);
+  else d.printf("BtnA=cycle  wireless");
   canvas.pushSprite(0, 0);
+}
+
+// Sharp TV IR codes (address 0x01). NOTE: best-guess set; if your TV ignores
+// them we will capture the real codes from your remote.
+static void blastIR(uint8_t act) {
+  const uint16_t ADDR = 0x01;
+  uint16_t cmd = 0; const char* lbl = "?";
+  switch (act) {
+    case IR_TV_POWER:   cmd = 0x16; lbl = "POWER";  break;
+    case IR_TV_VOLUP:   cmd = 0x02; lbl = "VOL+";   break;
+    case IR_TV_VOLDOWN: cmd = 0x03; lbl = "VOL-";   break;
+    case IR_TV_MUTE:    cmd = 0x06; lbl = "MUTE";   break;
+    case IR_TV_INPUT:   cmd = 0x0B; lbl = "INPUT";  break;
+    default: return;
+  }
+  irsend.sendSharp(ADDR, cmd);
+  g_irLabel = lbl; g_irFlash = millis();
 }
 
 void setup() {
@@ -84,6 +120,7 @@ void setup() {
   canvas.createSprite(M5.Display.width(), M5.Display.height());
 
   strip.begin(); strip.setBrightness(40); strip.clear(); strip.show();
+  irsend.begin();
 
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
@@ -101,6 +138,7 @@ void loop() {
   M5.update();
   if (M5.BtnA.wasPressed()) g_metric = (g_metric + 1) % MET_COUNT;
   if (g_setMetric != 0xFF) { g_metric = g_setMetric; g_setMetric = 0xFF; }
+  if (g_irCmd != 0xFF) { uint8_t a = g_irCmd; g_irCmd = 0xFF; blastIR(a); }
 
   static String line;
   while (Serial.available()) {

@@ -51,4 +51,11 @@ static constexpr uint8_t BTN_COUNT     = 6;
 enum Metric : uint8_t { MET_MEM = 0, MET_GPU = 1, MET_CPU = 2, MET_DISK = 3, MET_COUNT = 4 };
 static const char* const METRIC_NAMES[MET_COUNT] = { "MEM", "GPU", "CPU", "DISK" };
 
+// Media (USB consumer-control) actions handled by the dongle.
+enum Media : uint8_t { MED_VOLUP = 0, MED_VOLDOWN = 1, MED_MUTE = 2,
+                       MED_PLAYPAUSE = 3, MED_NEXT = 4, MED_PREV = 5 };
+// TV IR actions handled by the StickC IR blaster.
+enum IrCmd : uint8_t { IR_TV_POWER = 0, IR_TV_VOLUP = 1, IR_TV_VOLDOWN = 2,
+                       IR_TV_MUTE = 3, IR_TV_INPUT = 4 };
+
 } // namespace espkvm
