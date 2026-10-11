@@ -9,26 +9,10 @@ flashing/hardware work here manually.)
 
 ## 2026
 
-- 2026-10-11 — 1.0h — Kickoff. Chose ESP-KVM wireless macro deck (T-Dongle S3 USB-HID
-  dongle + CoreS3 LVGL remote over ESP-NOW). Verified hardware capabilities, scaffolded
-  PlatformIO dual-env repo, shared protocol, Phase 1 USB-HID+ESP-NOW coexistence spike,
-  CoreS3 boot splash. (Hours are an estimate — adjust to actual.)
-- 2026-10-11 — 1.5h — Hardware bring-up. Installed PlatformIO (pioarduino / arduino-esp32
-  3.3.12), got both envs compiling, created private GitHub repo (thededman/ESP-KVM) and
-  pushed. Flashed the dongle and debugged USB enumeration: learned the T-Dongle S3 needs
-  a physical power-cycle to run new firmware (no auto-reset) and BOOT-hold to flash.
-  Confirmed Phase 1 on hardware — USB-HID keyboard + ESP-NOW coexist (typed tx=155).
-  (Estimate — adjust to actual.)
-- 2026-10-11 — 1.0h — Phase 2 built & verified. Dongle receiver (ESP-NOW -> USB HID
-  keyboard/mouse) + CoreS3 touch macro deck (6 buttons, portrait). Flashed both;
-  confirmed end-to-end on hardware: CoreS3 "Hello" tap typed into the Mac. Noted a
-  USB-hub flashing hiccup (retry fixed it) and both device MACs for pairing.
-  (Estimate — adjust to actual.)
-- 2026-10-11 — 1.5h — Phase 4 LVGL glow-up. Integrated LVGL 8.4 with M5Unified
-  (flush + touch glue, lv_conf), rebuilt the CoreS3 UI: status bar w/ battery and a
-  swipeable 3-profile tileview (Dev/System/Snippets) of styled buttons. Verified on
-  hardware: swipe + button taps work. (Estimate — adjust to actual.)
-- 2026-10-11 — 1.0h — Added the M5Paper e-ink node. New ANNOUNCE message + shared
-  macro table so the CoreS3 drives an ambient legend/log on the M5Paper (original
-  ESP32, board m5stack_paper). Flashed all three; verified the legend tracks the
-  active profile over ESP-NOW. (Estimate — adjust to actual.)
+- 2026-10-11 — 2.2h — ESP-KVM built end-to-end in one session. Set up PlatformIO
+  (pioarduino / arduino-esp32 3.x) triple-env repo + private GitHub + changelog.
+  Phase 1: USB-HID + ESP-NOW coexistence on the T-Dongle S3 (hardware-verified,
+  learned its no-auto-reset flash/run quirk). Phase 2: CoreS3 touch -> ESP-NOW ->
+  dongle -> Mac control link. Phase 4: LVGL swipeable macro deck (Dev/System/
+  Snippets). Added the M5Paper e-ink legend/log node. All three verified on
+  hardware. (2.2h = measured Claude hands-on time; add any offline bench testing.)
