@@ -9,7 +9,6 @@
 #include <USB.h>
 #include <USBHIDKeyboard.h>
 #include <USBHIDMouse.h>
-#include <USBCDC.h>
 #include <USBHIDConsumerControl.h>
 #define LGFX_USE_V1
 #include <LovyanGFX.hpp>
@@ -53,7 +52,6 @@ static constexpr int PIN_BUTTON = 0;
 
 USBHIDKeyboard Keyboard;
 USBHIDMouse    Mouse;
-USBCDC         USBSerial;   // CDC channel: Mac stats in (relayed to StickC)
 USBHIDConsumerControl Consumer;    // media/volume keys
 
 // recv ring (cb -> loop)
@@ -63,7 +61,6 @@ static Packet            qbuf[QN];
 
 // display/status state
 static volatile uint32_t g_rx = 0;      // commands executed
-static uint16_t g_seq = 0;              // ESP-NOW sequence for relayed STATS
 static uint8_t  g_lastProfile = 0, g_lastBtn = 0xFF;
 static bool     g_hidEnabled = true;
 static bool     g_dirty = true;
@@ -158,7 +155,6 @@ void setup() {
   pinMode(PIN_BUTTON, INPUT_PULLUP);
   Keyboard.begin();
   Mouse.begin();
-  USBSerial.begin();   // register CDC before USB starts (composite HID + CDC)
   Consumer.begin();
   USB.begin();
 
@@ -188,22 +184,6 @@ void loop() {
     execPacket(p);
   }
 
-  // Relay Mac system-monitor stats (USB-CDC) to the StickC over ESP-NOW.
-  static String sline;
-  while (USBSerial.available()) {
-    char ch = (char)USBSerial.read();
-    if (ch == '\n' || ch == '\r') {
-      int m, g, c, dsk;
-      if (sscanf(sline.c_str(), "S %d %d %d %d", &m, &g, &c, &dsk) == 4) {
-        auto cl = [](int v){ return (uint8_t)(v < 0 ? 0 : v > 100 ? 100 : v); };
-        Stats st{ cl(m), cl(g), cl(c), cl(dsk) };
-        Packet p = make_packet(Cmd::STATS, &st, sizeof(st), g_seq++);
-        uint8_t b[6]; memset(b, 0xFF, 6);
-        esp_now_send(b, reinterpret_cast<uint8_t*>(&p), sizeof(p));
-      }
-      sline = "";
-    } else if (sline.length() < 28) sline += ch;
-  }
 
   // BOOT toggles HID output on/off
   static bool released = true;

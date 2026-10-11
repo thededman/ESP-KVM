@@ -229,6 +229,7 @@ void setup() {
   auto cfg = M5.config();
   M5.begin(cfg);
   M5.Display.setRotation(2);
+  Serial.begin(115200);   // USB serial: Mac stats in (relayed to StickC)
 
   lv_init();
   lv_disp_draw_buf_init(&draw_buf, lvbuf, nullptr, 240 * 40);
@@ -265,6 +266,22 @@ void setup() {
 void loop() {
   M5.update();
   lv_timer_handler();
+
+  // Relay Mac system-monitor stats from USB serial to the StickC over ESP-NOW.
+  static String sline;
+  while (Serial.available()) {
+    char ch = (char)Serial.read();
+    if (ch == '\n' || ch == '\r') {
+      int m, g, c, dsk;
+      if (sscanf(sline.c_str(), "S %d %d %d %d", &m, &g, &c, &dsk) == 4) {
+        auto cl = [](int v){ return (uint8_t)(v < 0 ? 0 : v > 100 ? 100 : v); };
+        Stats st{ cl(m), cl(g), cl(c), cl(dsk) };
+        Packet p = make_packet(Cmd::STATS, &st, sizeof(st), g_seq++);
+        sendPacket(p);
+      }
+      sline = "";
+    } else if (sline.length() < 28) sline += ch;
+  }
   static uint32_t lastBatt = 0;
   if (millis() - lastBatt > 5000) {
     lastBatt = millis();
