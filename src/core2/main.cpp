@@ -1,4 +1,4 @@
-// ESP-KVM Core2 "Guard" — bridge to the M5Stack UnitV2 AI camera.
+// Nexus Core2 "Guard" — bridge to the M5Stack UnitV2 AI camera.
 // Reads the UnitV2's JSON face detections over PORT.A UART (115200 8N1) and does
 // presence-aware auto-lock: if no face is seen for a timeout while ARMED, it fires
 // the System > Lock macro over ESP-NOW. On-screen ARM/DISARM toggle (default off)
@@ -59,7 +59,7 @@ static void draw() {
 
   d.fillRect(0, 0, W, 30, 0x10A2);
   d.setTextColor(0x7FFF, 0x10A2); d.setTextSize(2); d.setCursor(6, 7);
-  d.print("ESP-KVM Guard");
+  d.print("Nexus Guard");
 
   bool present = g_faces > 0;
   uint16_t col = present ? 0x2FE6 : 0xFD20;

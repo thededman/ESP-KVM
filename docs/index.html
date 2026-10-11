@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nexus</title>
+<meta name="description" content="A six-node wireless control mesh built from M5Stack gear — macro deck, e-ink remote, AI auto-lock, RGB monitor, and TV IR, all over ESP-NOW.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  /* Layout: a dark bench build-log — sticky wordmark bar, banded scroll of hero → nodes → features → timeline → specs → gallery */
+  :root{
+    --bg:#f3f5f8; --surface:#ffffff; --surface-2:#eef1f6; --fg:#13161d; --muted:#596173;
+    --line:#dde2ea; --accent:#0a84c0; --accent-2:#d9571a; --glow:rgba(10,132,192,.12);
+    --good:#1a9e5a; --warn:#c7881a; --crit:#d23b3b;
+    --disp:"Chakra Petch",ui-sans-serif,system-ui,sans-serif;
+    --body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0a0c11; --surface:#12151c; --surface-2:#171b24; --fg:#e9ecf3; --muted:#8b94a7;
+    --line:#242a36; --accent:#4cc8ff; --accent-2:#ff8244; --glow:rgba(76,200,255,.16);
+    --good:#33d17a; --warn:#f0b029; --crit:#ff5c5c; color-scheme:dark;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0a0c11; --surface:#12151c; --surface-2:#171b24; --fg:#e9ecf3; --muted:#8b94a7;
+    --line:#242a36; --accent:#4cc8ff; --accent-2:#ff8244; --glow:rgba(76,200,255,.16);
+    --good:#33d17a; --warn:#f0b029; --crit:#ff5c5c; color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--fg);font-family:var(--body);line-height:1.6;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden}
+  h1,h2,h3{font-family:var(--disp);text-wrap:balance;margin:0;letter-spacing:.01em}
+  a{color:var(--accent);text-decoration:none}
+  img{max-width:100%;display:block}
+  .wrap{width:100%;max-width:1040px;margin:0 auto;padding-inline:20px}
+  .mono{font-family:var(--mono)}
+  .eyebrow{font-family:var(--mono);font-size:.74rem;letter-spacing:.22em;text-transform:uppercase;color:var(--accent)}
+
+  header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 86%,transparent);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px}
+  .mark{font-family:var(--disp);font-weight:700;font-size:1.15rem;letter-spacing:.06em;display:flex;align-items:center;gap:9px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--glow)}
+  .bar nav{display:flex;align-items:center;gap:6px}
+  .btn{font-family:var(--mono);font-size:.82rem;font-weight:500;padding:8px 14px;border-radius:9px;
+    border:1px solid var(--line);color:var(--fg);background:var(--surface);cursor:pointer;white-space:nowrap}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#04121a;font-weight:600}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .icon-btn{width:38px;height:38px;display:grid;place-items:center;padding:0}
+
+  .hero{padding-block:clamp(40px,7vw,78px) clamp(30px,5vw,54px)}
+  .hero h1{font-size:clamp(3rem,13vw,7rem);font-weight:700;line-height:.92;margin:14px 0 0}
+  .hero h1 .kv{color:var(--accent)}
+  .lede{font-size:clamp(1.05rem,2.4vw,1.3rem);color:var(--fg);max-width:60ch;margin:18px 0 0}
+  .lede b{color:var(--accent-2);font-weight:600}
+  .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+  .chip{font-family:var(--mono);font-size:.78rem;color:var(--muted);border:1px solid var(--line);
+    background:var(--surface);padding:6px 11px;border-radius:999px}
+  .chip b{color:var(--fg);font-weight:600}
+  .hero-shot{margin-top:34px;border-radius:16px;overflow:hidden;border:1px solid var(--line);
+    box-shadow:0 24px 60px -30px var(--glow)}
+  .hero-shot img{width:100%;aspect-ratio:3/2;object-fit:cover}
+  .cap{font-family:var(--mono);font-size:.74rem;color:var(--muted);padding:9px 12px;background:var(--surface);border-top:1px solid var(--line)}
+
+  section{padding-block:clamp(38px,6vw,64px)}
+  .band{background:var(--surface);border-block:1px solid var(--line)}
+  .shead{max-width:64ch}
+  .shead h2{font-size:clamp(1.7rem,4.5vw,2.5rem);font-weight:600;margin-top:10px}
+  .shead p{color:var(--muted);margin:10px 0 0}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:14px;margin-top:30px}
+  .node{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:18px;min-width:0;
+    display:flex;flex-direction:column;gap:9px}
+  .node .role{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-2)}
+  .node h3{font-size:1.18rem;font-weight:600}
+  .node .hw{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+  .node p{margin:2px 0 0;font-size:.95rem;color:var(--fg)}
+  .node .spec{margin-top:auto;padding-top:11px;border-top:1px dashed var(--line);font-family:var(--mono);
+    font-size:.74rem;color:var(--muted)}
+  .node .spec b{color:var(--accent);font-weight:600}
+
+  .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:30px}
+  .f{display:flex;gap:13px;align-items:flex-start;min-width:0}
+  .f .k{font-family:var(--disp);font-weight:700;font-size:1.1rem;color:var(--accent);
+    font-variant-numeric:tabular-nums;flex:none;width:2.1ch;text-align:right}
+  .f h3{font-size:1.04rem;font-weight:600}
+  .f p{margin:3px 0 0;font-size:.93rem;color:var(--muted)}
+
+  .tl{margin-top:30px;display:flex;flex-direction:column;gap:2px;border-left:2px solid var(--line)}
+  .step{position:relative;padding:14px 0 14px 30px;border-bottom:1px solid var(--line)}
+  .step:last-child{border-bottom:0}
+  .step::before{content:attr(data-n);position:absolute;left:-13px;top:14px;width:24px;height:24px;border-radius:50%;
+    background:var(--surface);border:2px solid var(--accent);color:var(--accent);font-family:var(--mono);
+    font-size:.72rem;font-weight:600;display:grid;place-items:center}
+  .step h3{font-size:1.06rem;font-weight:600}
+  .step p{margin:4px 0 0;color:var(--muted);font-size:.93rem}
+
+  .story{background:linear-gradient(180deg,var(--surface),var(--bg));border:1px solid var(--line);
+    border-radius:16px;padding:clamp(20px,4vw,34px);margin-top:4px}
+  .story .q{font-family:var(--disp);font-weight:600;font-size:clamp(1.3rem,3.6vw,1.9rem);line-height:1.2}
+  .story .q span{color:var(--accent-2)}
+  .story p{color:var(--muted);margin:14px 0 0;max-width:62ch}
+  .codes{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .code{font-family:var(--mono);font-size:.78rem;background:var(--surface-2);border:1px solid var(--line);
+    border-radius:8px;padding:7px 11px;color:var(--fg)}
+  .code b{color:var(--accent)}
+
+  .readout{margin-top:26px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;
+    font-family:var(--mono);font-size:.84rem;overflow:hidden}
+  .rrow{display:flex;gap:14px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .rrow:last-child{border-bottom:0}
+  .rrow .lbl{color:var(--muted);flex:none;width:11ch}
+  .rrow .val{color:var(--fg);min-width:0}
+  .rrow .val b{color:var(--accent)}
+
+  .gal{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:30px}
+  .gal figure{margin:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface);min-width:0}
+  .gal img{width:100%;aspect-ratio:4/3;object-fit:cover}
+  .gal figcaption{font-family:var(--mono);font-size:.74rem;color:var(--muted);padding:9px 12px;border-top:1px solid var(--line)}
+
+  footer{border-top:1px solid var(--line);background:var(--surface);padding-block:30px;margin-top:8px}
+  .foot{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+  .foot .note{font-family:var(--mono);font-size:.76rem;color:var(--muted)}
+
+  @media (max-width:560px){.gal{grid-template-columns:1fr}.rrow{flex-direction:column;gap:2px}.rrow .lbl{width:auto}}
+  @media (prefers-reduced-motion:no-preference){.btn,.node{transition:transform .15s ease,border-color .15s ease}
+    .node:hover{transform:translateY(-2px);border-color:var(--accent)}.btn:hover{border-color:var(--accent)}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <div class="mark"><span class="dot"></span>NEXUS</div>
+    <nav>
+      <a class="btn primary" href="https://github.com/thededman/Nexus" target="_blank" rel="noopener">View on GitHub</a>
+      <button class="btn icon-btn" id="theme" aria-label="Toggle theme" title="Toggle light/dark">&#9680;</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <p class="eyebrow">M5Stack build log</p>
+    <h1><span class="kv">Nexus</span><br>a wireless control mesh</h1>
+    <p class="lede">Six M5Stack devices on one ESP&#8209;NOW mesh &mdash; no router. A touch <b>macro deck</b> that types into your Mac, an e&#8209;ink <b>remote</b> that runs the Mac <i>and</i> the TV, an AI camera that <b>locks the screen</b> when you walk away, and an RGB strip that reads your <b>RAM</b>.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/thededman/Nexus" target="_blank" rel="noopener">github.com/thededman/Nexus</a>
+      <a class="btn" href="https://github.com/thededman/Nexus/releases/tag/v0.2.0" target="_blank" rel="noopener">Release v0.2.0</a>
+    </div>
+    <div class="chips">
+      <span class="chip"><b>6</b> devices</span>
+      <span class="chip"><b>1</b> ESP-NOW mesh</span>
+      <span class="chip"><b>0</b> routers</span>
+      <span class="chip"><b>~5.6 h</b> hands-on</span>
+      <span class="chip"><b>2</b> tagged releases</span>
+    </div>
+    <figure class="hero-shot">
+      <img src="./assets/bench.jpg" alt="The Nexus build on a workbench: MacBook with the T-Dongle S3, an M5 CoreS3 macro deck, and the SK6812 RGB strip coiled on the desk.">
+      <figcaption class="cap">The bench &mdash; dongle in the Mac, CoreS3 deck, and the SK6812 strip for the RAM gauge.</figcaption>
+    </figure>
+  </div>
+
+  <section class="band">
+    <div class="wrap">
+      <p class="eyebrow">The mesh</p>
+      <div class="shead"><h2>Six nodes, one radio</h2>
+        <p>Every device is an ESP32 on ESP&#8209;NOW channel 1, peer&#8209;to&#8209;peer. They run on battery and talk directly &mdash; no Wi&#8209;Fi, no cloud, no pairing server.</p></div>
+      <div class="grid">
+        <div class="node">
+          <span class="role">the dongle</span>
+          <h3>T&#8209;Dongle S3</h3>
+          <span class="hw">LilyGO ESP32&#8209;S3 &middot; USB&#8209;A</span>
+          <p>Plugs into the Mac and enumerates as a real USB keyboard + mouse. Its 0.96&Prime; ST7735 shows the last action; BOOT toggles HID output as a safety gate.</p>
+          <div class="spec">USB&#8209;HID + ESP&#8209;NOW <b>coexist</b> on one S3</div>
+        </div>
+        <div class="node">
+          <span class="role">the deck</span>
+          <h3>CoreS3</h3>
+          <span class="hw">M5Stack ESP32&#8209;S3 &middot; 2&Prime; touch</span>
+          <p>LVGL macro pad: swipe between Dev / System / Snippets profiles and a Monitor page, with animated buttons and a battery bar. Also relays Mac stats to the mesh.</p>
+          <div class="spec">LVGL 8 over <b>M5Unified</b></div>
+        </div>
+        <div class="node">
+          <span class="role">the remote</span>
+          <h3>Slate</h3>
+          <span class="hw">M5Paper &middot; 4.7&Prime; e&#8209;ink touch</span>
+          <p>A paginated e&#8209;ink touch remote &mdash; Media, TV (IR), Mac macros, Monitor. The side wheel flips pages. One surface drives the Mac and the living&#8209;room TV.</p>
+          <div class="spec">GT911 touch &middot; <b>wheel</b>&#8209;paged</div>
+        </div>
+        <div class="node">
+          <span class="role">the guard</span>
+          <h3>Core2 + UnitV2</h3>
+          <span class="hw">M5Stack ESP32 + AI camera</span>
+          <p>The UnitV2 AI camera watches for a face over UART. No face for 15&nbsp;s while armed &rarr; the Core2 fires &#8963;&#8984;Q and locks the Mac. On&#8209;screen ARM/DISARM.</p>
+          <div class="spec">face detect &rarr; <b>auto&#8209;lock</b></div>
+        </div>
+        <div class="node">
+          <span class="role">the monitor</span>
+          <h3>StickC Plus2 + SK6812</h3>
+          <span class="hw">M5Stack ESP32 + 30 LEDs</span>
+          <p>Drives a flex strip as an ambient MEM / GPU / CPU / DISK gauge &mdash; green&rarr;amber&rarr;red as it fills. Switch the metric from the remote. Doubles as the TV IR blaster.</p>
+          <div class="spec">NeoPixel bar + <b>IR TX</b> (GPIO19)</div>
+        </div>
+        <div class="node" style="background:linear-gradient(145deg,var(--surface-2),var(--bg));border-style:dashed">
+          <span class="role">the glue</span>
+          <h3>Shared protocol</h3>
+          <span class="hw">one versioned packet</span>
+          <p>A versioned ESP&#8209;NOW packet and a shared macro table every node links against: key combos, strings, media keys, metric switches, IR commands, stats.</p>
+          <div class="spec">one header, <b>five</b> firmwares</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">What it does</p>
+      <div class="shead"><h2>One deck for the whole room</h2></div>
+      <div class="feat">
+        <div class="f"><div class="k">01</div><div><h3>Types anything</h3><p>Macros, snippets, key combos, and real USB media/volume keys straight into the Mac.</p></div></div>
+        <div class="f"><div class="k">02</div><div><h3>Walk&#8209;away lock</h3><p>The AI camera sees you leave and locks the screen. No app, no account, no cloud.</p></div></div>
+        <div class="f"><div class="k">03</div><div><h3>Ambient monitor</h3><p>RAM, CPU, GPU, and disk on an RGB strip, switchable from the remote or the stick's button.</p></div></div>
+        <div class="f"><div class="k">04</div><div><h3>TV remote</h3><p>Tap the e&#8209;ink &rarr; ESP&#8209;NOW &rarr; IR blast &rarr; the living&#8209;room TV powers on.</p></div></div>
+        <div class="f"><div class="k">05</div><div><h3>All wireless</h3><p>ESP&#8209;NOW peer&#8209;to&#8209;peer. Only the keyboard dongle needs the Mac; everything else runs on battery.</p></div></div>
+        <div class="f"><div class="k">06</div><div><h3>Open &amp; documented</h3><p>Five PlatformIO build envs in one repo, per&#8209;device wiring, a changelog, and two tagged releases.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <p class="eyebrow">Build journey</p>
+      <div class="shead"><h2>Empty folder to living&#8209;room TV</h2>
+        <p>Built live, start to finish, in a single session.</p></div>
+      <div class="tl">
+        <div class="step" data-n="1"><h3>The coexistence spike</h3><p>First, prove the ESP32&#8209;S3 can be a USB&#8209;HID keyboard <em>and</em> run ESP&#8209;NOW at the same time. It can &mdash; the radio and USB peripheral are independent blocks. Everything else rode on that.</p></div>
+        <div class="step" data-n="2"><h3>The control link</h3><p>CoreS3 touch &rarr; ESP&#8209;NOW &rarr; dongle &rarr; the Mac types &ldquo;Hello&rdquo;. The whole wireless chain, proven.</p></div>
+        <div class="step" data-n="3"><h3>The LVGL deck</h3><p>A real macro pad: swipeable profiles, press animations, page dots, battery bar.</p></div>
+        <div class="step" data-n="4"><h3>The e&#8209;ink remote &rarr; Slate</h3><p>A passive legend of the deck's buttons grew into a full interactive touch remote.</p></div>
+        <div class="step" data-n="5"><h3>The guard</h3><p>Wire the UnitV2 AI camera to a Core2 over UART and turn presence into a screen lock.</p></div>
+        <div class="step" data-n="6"><h3>The RGB monitor</h3><p>Stream macOS memory pressure to a StickC and paint it on a 30&#8209;LED strip.</p></div>
+        <div class="step" data-n="7"><h3>The TV remote</h3><p>Make the stick an IR blaster and point it at a 65&Prime; TV. Then the fun part&hellip;</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="story">
+        <p class="eyebrow">War story &middot; infrared</p>
+        <p class="q">&ldquo;Can this control my old Sharp 65&Prime; TV by IR? <span>LOL!</span>&rdquo;</p>
+        <p>The &ldquo;Sharp&rdquo; turned out to be <b>Hisense&#8209;made</b> (model LC&#8209;50P7000U), so every Sharp code did nothing. Two problems stacked: the wrong code family, and IRremoteESP8266 wanting its own byte order. The fix was the official Hisense NEC codes on address <span class="mono">0x04</span>, sent through <span class="mono">encodeNEC()</span>. The TV turned on.</p>
+        <div class="codes">
+          <span class="code">PWR <b>0x70</b></span>
+          <span class="code">VOL+ <b>0xA6</b></span>
+          <span class="code">VOL&minus; <b>0xA5</b></span>
+          <span class="code">INPUT <b>0x73</b></span>
+          <span class="code">addr <b>0x04</b> &middot; NEC</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <p class="eyebrow">Under the hood</p>
+      <div class="shead"><h2>The parts that fought back</h2></div>
+      <div class="readout">
+        <div class="rrow"><span class="lbl">toolchain</span><span class="val">PlatformIO + <b>pioarduino</b> (arduino&#8209;esp32 3.x) &middot; 5 build envs in one repo</span></div>
+        <div class="rrow"><span class="lbl">link</span><span class="val">ESP&#8209;NOW, <b>channel 1</b>, broadcast &middot; shared versioned packet protocol</span></div>
+        <div class="rrow"><span class="lbl">flash quirk</span><span class="val">T&#8209;Dongle S3 has <b>no auto&#8209;reset</b> &mdash; hold BOOT to flash, power&#8209;cycle to run</span></div>
+        <div class="rrow"><span class="lbl">usb</span><span class="val">HID+CDC composite on the S3 is flaky (HID drops) &rarr; Mac stats relay via the <b>CoreS3</b></span></div>
+        <div class="rrow"><span class="lbl">display glue</span><span class="val">hand&#8209;written LovyanGFX config for the dongle's ST7735 &middot; LVGL flush on M5Unified</span></div>
+        <div class="rrow"><span class="lbl">ir</span><span class="val">IRremoteESP8266 on <b>GPIO19</b> &middot; Hisense NEC via encodeNEC()</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">Gallery</p>
+      <div class="shead"><h2>On the bench</h2></div>
+      <div class="gal">
+        <figure><img src="./assets/slate.jpg" alt="Slate, the M5Paper e-ink remote, showing Media / TV / Mac / Monitor touch buttons.">
+          <figcaption>Slate &mdash; the e&#8209;ink remote. Media, TV (IR), Mac, Monitor.</figcaption></figure>
+        <figure><img src="./assets/ecosystem.jpg" alt="The StickC showing a MEM gauge, the UnitV2 camera, and a 3D-printed WiFi-tower piece on the bench.">
+          <figcaption>The monitor stick, the UnitV2 camera, and a 3D&#8209;printed mascot.</figcaption></figure>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div class="mark"><span class="dot"></span>NEXUS</div>
+    <a class="btn primary" href="https://github.com/thededman/Nexus" target="_blank" rel="noopener">Clone it on GitHub</a>
+    <span class="note">Open source &middot; v0.2.0 &middot; built with M5Stack gear</span>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    var root=document.documentElement, key="nexus-theme";
+    function cur(){try{return localStorage.getItem(key)}catch(e){return null}}
+    function sysDark(){return matchMedia("(prefers-color-scheme:dark)").matches}
+    function apply(t){ if(t) root.setAttribute("data-theme",t); else root.removeAttribute("data-theme"); }
+    apply(cur());
+    document.getElementById("theme").addEventListener("click",function(){
+      var isDark = root.getAttribute("data-theme")==="dark" || (!root.getAttribute("data-theme") && sysDark());
+      var next = isDark ? "light" : "dark";
+      apply(next);
+      try{localStorage.setItem(key,next)}catch(e){}
+    });
+  })();
+</script>
+</body>
+</html>

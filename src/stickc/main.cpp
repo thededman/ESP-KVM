@@ -1,4 +1,4 @@
-// ESP-KVM M5StickC Plus2 — system monitor on an SK6812 flex strip.
+// Nexus M5StickC Plus2 — system monitor on an SK6812 flex strip.
 // Reads "S <mem> <gpu> <cpu> <disk>\n" lines from USB serial (tools/sysmon.sh) and
 // shows the SELECTED metric as a green->amber->red progress bar on the strip + the
 // value on-screen. Button A cycles the metric; the CoreS3 can also set it via ESP-NOW.

@@ -1,4 +1,4 @@
-// ESP-KVM controller — Phase 4: LVGL touch macro deck (+ ANNOUNCE for M5Paper).
+// Nexus controller — Phase 4: LVGL touch macro deck (+ ANNOUNCE for M5Paper).
 // Swipeable profile pages of styled buttons; a tap sends the command to the dongle
 // AND an ANNOUNCE (profile+button) so the M5Paper can show the legend/log. A swipe
 // sends an ANNOUNCE with button=0xFF (profile switch only).
@@ -134,7 +134,7 @@ static void build_ui() {
   lv_obj_clear_flag(bar, LV_OBJ_FLAG_SCROLLABLE);
 
   lv_obj_t* title = lv_label_create(bar);
-  lv_label_set_text(title, "ESP-KVM");
+  lv_label_set_text(title, "Nexus");
   lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
   lv_obj_set_style_text_color(title, lv_color_hex(0x7FD6FF), 0);
   lv_obj_align(title, LV_ALIGN_LEFT_MID, 2, 0);

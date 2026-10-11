@@ -1,4 +1,4 @@
-// ESP-KVM dongle — Phase 2/4: ESP-NOW receiver -> USB HID, with onboard status LCD.
+// Nexus dongle — Phase 2/4: ESP-NOW receiver -> USB HID, with onboard status LCD.
 // Receives commands over ESP-NOW and injects them as USB keyboard/mouse. Shows a
 // live status screen on the T-Dongle S3's 0.96" ST7735 (last action from ANNOUNCE,
 // packet count, HID on/off). BOOT toggles HID output on/off (safety).
@@ -93,7 +93,7 @@ static void drawStatus() {
   lcd.setTextColor(TFT_WHITE);
   lcd.setTextSize(2);
   lcd.setCursor(4, 2);
-  lcd.print("ESP-KVM");
+  lcd.print("Nexus");
   lcd.setTextSize(1);
   lcd.setCursor(W - 30, 5);
   lcd.print(g_hidEnabled ? "HID" : "OFF");

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ESP-KVM system monitor host script.
+# Nexus system monitor host script.
 # Streams "S <mem> <gpu> <cpu> <disk>" (used %) to the DONGLE's USB-CDC serial;
 # the CoreS3 rebroadcasts them over ESP-NOW to the (battery-powered) StickC.
 # Usage: ./tools/sysmon.sh /dev/cu.usbmodemXXXX   (the CoreS3's serial port)
@@ -11,7 +11,7 @@ if [ -z "${PORT:-}" ] || [ ! -e "$PORT" ]; then
 fi
 exec 3<>"$PORT"
 stty -f "$PORT" 115200 cs8 -parenb -cstopb -echo raw -hupcl 2>/dev/null
-echo "ESP-KVM sysmon -> $PORT @115200  (Ctrl-C to stop)"
+echo "Nexus sysmon -> $PORT @115200  (Ctrl-C to stop)"
 while true; do
   free=$(memory_pressure 2>/dev/null | awk -F: '/free percentage/ {gsub(/[ %]/,"",$2); print $2}'); [ -z "$free" ] && free=100
   mem=$(( 100 - free ))

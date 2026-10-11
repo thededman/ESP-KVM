@@ -1,11 +1,17 @@
 # Changelog
 
-All notable changes to ESP-KVM are documented in this file.
+All notable changes to Nexus are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Changed
+- **Renamed the project to Nexus**, and the M5Paper e-ink remote to **Slate** &mdash; on-device
+  titles (dongle, CoreS3, Core2 "Guard", the remote), the README, docs, and the GitHub repo.
+  Internal code identifiers (`espkvm_proto`, `namespace espkvm`, `ESPKVM_VERSION`) are unchanged.
+- Added a project **showcase** (`docs/index.html`) published via **GitHub Pages**.
 
 ## [0.2.0] - 2026-10-11
 
@@ -85,6 +91,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **System monitor verified on hardware (2026-10-11):** StickC Button A cycles
   MEM/GPU/CPU/DISK and the CoreS3 Monitor page switches the metric over ESP-NOW.
 
-[Unreleased]: https://github.com/thededman/ESP-KVM/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/thededman/ESP-KVM/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/thededman/ESP-KVM/releases/tag/v0.1.0
+[Unreleased]: https://github.com/thededman/Nexus/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/thededman/Nexus/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/thededman/Nexus/releases/tag/v0.1.0

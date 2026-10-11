@@ -1,4 +1,4 @@
-// ESP-KVM wire protocol — shared by both the controller and the dongle.
+// Nexus wire protocol — shared by both the controller and the dongle.
 // Header-only so both PlatformIO environments can include it directly.
 #pragma once
 #include <stdint.h>
@@ -6,7 +6,7 @@
 
 namespace espkvm {
 
-static constexpr uint8_t PROTO_MAGIC   = 0xE5;  // "E5" ~ ESP-KVM
+static constexpr uint8_t PROTO_MAGIC   = 0xE5;  // "E5" ~ Nexus
 static constexpr uint8_t PROTO_VERSION = 1;
 static constexpr uint8_t MAX_PAYLOAD   = 32;
 static constexpr uint8_t MAX_KEYS      = 6;     // USB HID 6-key rollover

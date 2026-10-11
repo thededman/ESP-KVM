@@ -1,4 +1,4 @@
-// ESP-KVM macro/profile definitions — shared by the CoreS3 controller (which
+// Nexus macro/profile definitions — shared by the CoreS3 controller (which
 // sends the commands) and the M5Paper (which renders the legend + log).
 #pragma once
 #include <stdint.h>
@@ -34,7 +34,7 @@ static const Macro SYS[6] = {
   {"Desktop",   0x2E7D32, K_COMBO, nullptr, 0, key::F11},
 };
 static const Macro SNIP[6] = {
-  {"Hello",  0x2E7D32, K_STR, "Hello from ESP-KVM!\n", 0, 0},
+  {"Hello",  0x2E7D32, K_STR, "Hello from Nexus!\n", 0, 0},
   {"Email",  0x1565C0, K_STR, "you@example.com", 0, 0},
   {"Thanks", 0x00838F, K_STR, "Thanks!\n", 0, 0},
   {"Sig",    0x6A1B9A, K_STR, "\n-- David\n", 0, 0},
