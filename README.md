@@ -6,7 +6,7 @@ you walk away, and an RGB strip that reads your RAM — all talking over ESP-NOW
 
 **[&#9658; Live showcase](https://thededman.github.io/Nexus/)** &nbsp;·&nbsp; [Release v0.2.0](https://github.com/thededman/Nexus/releases/tag/v0.2.0) &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Wiring](docs/wiring.md)
 
-![Nexus on the bench — the T-Dongle S3 in the Mac, a CoreS3 macro deck, and the SK6812 RGB strip](docs/assets/bench.jpg)
+![The full Nexus mesh lit up — CoreS3 deck, Core2 guard, Slate remote, StickC monitor, UnitV2 camera, and the TV remote it replaces](docs/assets/hero.jpg)
 
 > **Scope:** "KVM" here means keyboard + mouse + macros + IR, not video. It controls *your own*
 > machines — a productivity/maker tool, not an attack device.
