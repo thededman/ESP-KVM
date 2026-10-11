@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   injects commands as USB keyboard/mouse (`TYPE_STRING`, `KEY_COMBO`, mouse move/
   button/scroll); CoreS3 is a touch macro deck (portrait) with 6 buttons — Hello,
   Spotlight, Copy, Paste, Lock, Screenshot — sending over ESP-NOW broadcast (ch 1).
+- **Phase 4 (in progress) — LVGL UI:** CoreS3 touch deck rebuilt in LVGL with a
+  status bar (battery), and three swipeable profile pages (Dev / System / Snippets)
+  of styled rounded buttons. Shared special-key codes added to the protocol.
 
 ### Fixed
 - Dongle build: strip the board's `ARDUINO_USB_MODE=1` via `build_unflags` so TinyUSB
@@ -34,3 +37,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Phase 2 end-to-end proven on hardware (2026-10-11):** tapping *Hello* on the
   CoreS3 typed `Hello from ESP-KVM!` into the Mac via the dongle — full touch →
   ESP-NOW → USB-HID path working.
+- **Phase 4 LVGL deck verified on hardware (2026-10-11):** swipe between profiles
+  and button taps fire commands to the Mac.

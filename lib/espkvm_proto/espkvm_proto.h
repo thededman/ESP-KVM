@@ -36,6 +36,15 @@ enum Modifier : uint8_t {
   MOD_RGUI   = 1 << 7,
 };
 
+// USB HID special key codes, matching arduino-esp32 USBHIDKeyboard constants, so
+// the controller can name non-ASCII keys and the dongle presses them directly.
+namespace key {
+  static constexpr uint8_t RET   = 0xB0, ESC = 0xB1, BACKSPACE = 0xB2, TAB = 0xB3;
+  static constexpr uint8_t RIGHT = 0xD7, LEFT = 0xD8, DOWN = 0xD9, UP = 0xDA;
+  static constexpr uint8_t F1=0xC2,F2=0xC3,F3=0xC4,F4=0xC5,F5=0xC6,F6=0xC7;
+  static constexpr uint8_t F7=0xC8,F8=0xC9,F9=0xCA,F10=0xCB,F11=0xCC,F12=0xCD;
+}
+
 enum MouseButton : uint8_t {
   MB_LEFT   = 1 << 0,
   MB_RIGHT  = 1 << 1,
