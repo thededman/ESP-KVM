@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ESP-KVM system monitor host script.
 # Streams "S <mem> <gpu> <cpu> <disk>" (used %) to the DONGLE's USB-CDC serial;
-# the dongle rebroadcasts them over ESP-NOW to the (battery-powered) StickC.
-# Usage: ./tools/sysmon.sh /dev/cu.usbmodemXXXX   (the dongle's serial port)
+# the CoreS3 rebroadcasts them over ESP-NOW to the (battery-powered) StickC.
+# Usage: ./tools/sysmon.sh /dev/cu.usbmodemXXXX   (the CoreS3's serial port)
 set -u
 PORT="${1:-$(ls -t /dev/cu.usbmodem* 2>/dev/null | head -1)}"
 if [ -z "${PORT:-}" ] || [ ! -e "$PORT" ]; then
