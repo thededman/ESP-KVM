@@ -36,3 +36,7 @@ Assistant** — just close it; typing still works.
 USB-HID + ESP-NOW coexistence confirmed on hardware: pressing BOOT typed
 `...spike OK: USB-HID + ESP-NOW coexist. tx=155 rx=0` — the climbing `tx` counter
 proves the radio runs concurrently with the USB keyboard. Dongle MAC: `F0:9E:9E:29:E6:CC`.
+
+## Device MACs (for ESP-NOW pairing, Phase 2b)
+- Dongle (T-Dongle S3): `F0:9E:9E:29:E6:CC`
+- Controller (CoreS3):  `48:27:E2:66:DB:90`

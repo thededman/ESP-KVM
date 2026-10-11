@@ -19,3 +19,8 @@ flashing/hardware work here manually.)
   a physical power-cycle to run new firmware (no auto-reset) and BOOT-hold to flash.
   Confirmed Phase 1 on hardware — USB-HID keyboard + ESP-NOW coexist (typed tx=155).
   (Estimate — adjust to actual.)
+- 2026-10-11 — 1.0h — Phase 2 built & verified. Dongle receiver (ESP-NOW -> USB HID
+  keyboard/mouse) + CoreS3 touch macro deck (6 buttons, portrait). Flashed both;
+  confirmed end-to-end on hardware: CoreS3 "Hello" tap typed into the Mac. Noted a
+  USB-hub flashing hiccup (retry fixed it) and both device MACs for pairing.
+  (Estimate — adjust to actual.)
