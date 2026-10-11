@@ -41,6 +41,7 @@ static bool     g_locked = false;
 static uint32_t g_lockCount = 0;
 static char     g_raw[256] = "(waiting for UnitV2...)";
 static int      g_dbgNum = -999, g_dbgArr = -1;
+static M5Canvas canvas(&M5.Display);
 
 static void sendFunction(const char* fn) {
   JsonDocument d; d["function"] = fn; d["args"] = "";
@@ -52,9 +53,8 @@ static void sendFunction(const char* fn) {
 // --- UI ---
 static int BTN_X, BTN_Y, BTN_W, BTN_H;
 static void draw() {
-  auto& d = M5.Display;
+  auto& d = canvas;
   const int W = d.width(), H = d.height();
-  d.startWrite();
   d.fillScreen(0x0000);
 
   d.fillRect(0, 0, W, 30, 0x10A2);
@@ -88,13 +88,14 @@ static void draw() {
   d.setTextColor(0x8C71, 0x0000); d.setTextSize(1);
   d.setCursor(10, H - 12);
   d.printf("locks:%lu  faces live  %s", (unsigned long)g_lockCount, ESPKVM_VERSION);
-  d.endWrite();
+  canvas.pushSprite(0, 0);
 }
 
 void setup() {
   auto cfg = M5.config();
   M5.begin(cfg);
   M5.Display.setRotation(1);
+  canvas.createSprite(M5.Display.width(), M5.Display.height());
 
   Serial2.begin(115200, SERIAL_8N1, UV2_RX, UV2_TX);
 
