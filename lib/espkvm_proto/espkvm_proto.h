@@ -21,6 +21,8 @@ enum class Cmd : uint8_t {
   SCROLL      = 5,   // int8 vertical, horizontal
   MEDIA       = 6,   // consumer-control usage (play/pause, volume, ...)
   SET_METRIC  = 7,   // controller -> StickC: which system metric to show
+  STATS       = 8,   // dongle -> StickC: Mac system stats (relayed from USB-CDC)
+  IR          = 9,   // remote -> StickC: blast a TV IR code
   ANNOUNCE    = 100, // controller -> M5Paper: profile/button context
   STATUS      = 200, // dongle -> controller heartbeat
 };
@@ -74,6 +76,7 @@ struct Scroll    { int8_t v;  int8_t h;  };
 struct MouseBtn  { uint8_t buttons; uint8_t pressed; };
 struct Status    { uint8_t linked; uint8_t hid_enabled; int8_t rssi; };
 struct Announce  { uint8_t profile; uint8_t button; }; // button 0xFF = profile switch only
+struct Stats     { uint8_t mem; uint8_t gpu; uint8_t cpu; uint8_t disk; }; // used %, 0..100
 #pragma pack(pop)
 
 // Build a packet from an arbitrary payload struct.

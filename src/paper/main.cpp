@@ -1,6 +1,7 @@
-// ESP-KVM M5Paper — ambient e-ink legend + action log.
-// Listens for ANNOUNCE packets from the CoreS3 controller and renders the current
-// profile's button map plus a log of recently fired macros on the e-ink display.
+// ESP-KVM M5Paper — touch remote (v0.2.0).
+// Big e-ink touch buttons grouped into Media / TV (IR) / Mac / Monitor sections.
+// A tap sends the matching command over ESP-NOW: MEDIA/KEY_COMBO to the dongle,
+// IR to the StickC blaster, SET_METRIC to the StickC monitor.
 #include <M5Unified.h>
 #include <WiFi.h>
 #include <esp_now.h>
@@ -12,94 +13,118 @@
 using namespace espkvm;
 
 static constexpr uint8_t ESPNOW_CHAN = 1;
-static constexpr int C_W = 0xFFFF;   // white
-static constexpr int C_B = 0x0000;   // black
-static constexpr int C_G = 0x8410;   // mid grey
+static constexpr int C_W = 0xFFFF, C_B = 0x0000;
+static uint8_t  BCAST[6] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+static uint16_t g_seq = 0;
+static const char* g_last = "ready";
 
-// ---- state ----
-static volatile bool g_have = false;
-static Packet        g_pkt;
-static uint8_t       g_profile = 0;
-static uint8_t       g_lastBtn = 0xFF;
-static uint32_t      g_renderCount = 0;
+enum RKind : uint8_t { RK_HEADER, RK_MEDIA, RK_IR, RK_MACRO, RK_METRIC };
+struct RItem { const char* label; RKind kind; uint8_t arg; int16_t x, y, w, h; };
 
-struct LogEntry { uint8_t profile; uint8_t button; uint32_t ts; };
-static constexpr int LOGN = 8;
-static LogEntry g_log[LOGN];
-static int      g_logHead = 0, g_logCount = 0;
+static RItem ITEMS[] = {
+  {"Media", RK_HEADER, 0},
+  {"Vol -", RK_MEDIA, MED_VOLDOWN}, {"Mute", RK_MEDIA, MED_MUTE}, {"Vol +", RK_MEDIA, MED_VOLUP},
+  {"Prev", RK_MEDIA, MED_PREV}, {"Play/Pause", RK_MEDIA, MED_PLAYPAUSE}, {"Next", RK_MEDIA, MED_NEXT},
+  {"TV  (IR)", RK_HEADER, 0},
+  {"Power", RK_IR, IR_TV_POWER}, {"TV Vol -", RK_IR, IR_TV_VOLDOWN}, {"TV Vol +", RK_IR, IR_TV_VOLUP},
+  {"TV Mute", RK_IR, IR_TV_MUTE}, {"Input", RK_IR, IR_TV_INPUT},
+  {"Mac", RK_HEADER, 0},
+  {"Spotlight", RK_MACRO, 0}, {"Lock", RK_MACRO, 1}, {"Screenshot", RK_MACRO, 2},
+  {"Monitor", RK_HEADER, 0},
+  {"MEM", RK_METRIC, MET_MEM}, {"GPU", RK_METRIC, MET_GPU}, {"CPU", RK_METRIC, MET_CPU}, {"DISK", RK_METRIC, MET_DISK},
+};
+static const int NITEMS = sizeof(ITEMS) / sizeof(ITEMS[0]);
 
-void onRecv(const esp_now_recv_info_t*, const uint8_t* data, int len) {
-  if (len == (int)sizeof(Packet)) { memcpy(&g_pkt, data, sizeof(Packet)); g_have = true; }
+static void sendPacket(const Packet& p) { esp_now_send(BCAST, (const uint8_t*)&p, sizeof(p)); }
+static void sendByte(Cmd c, uint8_t b) { Packet p = make_packet(c, &b, 1, g_seq++); sendPacket(p); }
+static void sendMacro(uint8_t arg) {
+  uint8_t mods = 0, key = 0;
+  switch (arg) {
+    case 0: mods = MOD_LGUI; key = ' '; break;                       // Spotlight
+    case 1: mods = MOD_LCTRL | MOD_LGUI; key = 'q'; break;           // Lock
+    case 2: mods = MOD_LGUI | MOD_LSHIFT; key = '4'; break;          // Screenshot
+  }
+  KeyCombo kc{ mods, 1, { key } };
+  Packet p = make_packet(Cmd::KEY_COMBO, &kc, sizeof(kc), g_seq++);
+  sendPacket(p);
 }
 
-static void drawCentered(int x, int y, int w, int h, const char* s) {
+static void layout() {
+  const int W = M5.Display.width();
+  const int pad = 14, cols = 3, bh = 92;
+  const int bw = (W - pad * (cols + 1)) / cols;
+  int y = 92, col = 0;
+  for (int i = 0; i < NITEMS; i++) {
+    if (ITEMS[i].kind == RK_HEADER) {
+      if (col != 0) { y += bh + pad; col = 0; }
+      ITEMS[i].x = pad; ITEMS[i].y = y; ITEMS[i].w = W - 2 * pad; ITEMS[i].h = 40;
+      y += 54;
+    } else {
+      ITEMS[i].x = pad + col * (bw + pad); ITEMS[i].y = y; ITEMS[i].w = bw; ITEMS[i].h = bh;
+      if (++col >= cols) { col = 0; y += bh + pad; }
+    }
+  }
+}
+
+static void drawCentered(const char* s, int x, int y, int w, int h) {
   int tw = M5.Display.textWidth(s), th = M5.Display.fontHeight();
   M5.Display.setCursor(x + (w - tw) / 2, y + (h - th) / 2);
   M5.Display.print(s);
 }
 
-static void render(bool full) {
+static void drawItem(const RItem& it, bool pressed) {
   auto& d = M5.Display;
-  d.setEpdMode(full ? m5gfx::epd_mode_t::epd_quality : m5gfx::epd_mode_t::epd_fast);
-  const int W = d.width(), H = d.height();
+  if (it.kind == RK_HEADER) {
+    d.setFont(&fonts::FreeSansBold18pt7b);
+    d.setTextColor(C_B, C_W);
+    d.setCursor(it.x + 4, it.y + 4);
+    d.print(it.label);
+    d.drawFastHLine(it.x, it.y + it.h, it.w, C_B);
+  } else {
+    uint16_t fill = pressed ? C_B : C_W, txt = pressed ? C_W : C_B;
+    d.fillRoundRect(it.x, it.y, it.w, it.h, 12, fill);
+    d.drawRoundRect(it.x, it.y, it.w, it.h, 12, C_B);
+    d.drawRoundRect(it.x + 1, it.y + 1, it.w - 2, it.h - 2, 11, C_B);
+    d.setFont(&fonts::FreeSansBold12pt7b);
+    d.setTextColor(txt, fill);
+    drawCentered(it.label, it.x, it.y, it.w, it.h);
+  }
+}
 
+static void drawFooter() {
+  auto& d = M5.Display;
+  int y = d.height() - 46;
+  d.fillRect(0, y, d.width(), 46, C_W);
+  d.drawFastHLine(0, y, d.width(), C_B);
+  d.setFont(&fonts::FreeSans9pt7b);
+  d.setTextColor(C_B, C_W);
+  d.setCursor(14, y + 14);
+  d.printf("last: %s        ESP-KVM remote %s", g_last, ESPKVM_VERSION);
+}
+
+static void renderAll() {
+  auto& d = M5.Display;
+  d.setEpdMode(m5gfx::epd_mode_t::epd_quality);
   d.startWrite();
   d.fillScreen(C_W);
-
-  // header
-  d.fillRect(0, 0, W, 96, C_B);
+  d.fillRect(0, 0, d.width(), 74, C_B);
+  d.setFont(&fonts::FreeSansBold24pt7b);
   d.setTextColor(C_W, C_B);
-  d.setTextSize(4);
-  d.setCursor(20, 32);
-  d.print("ESP-KVM");
-  d.setTextSize(5);
-  { const char* n = PROFILES[g_profile].name;
-    int tw = d.textWidth(n); d.setCursor(W - 20 - tw, 26); d.print(n); }
-
-  // legend grid (2x3)
-  d.setTextColor(C_B, C_W);
-  const int pad = 18, cols = 2, rows = 3, gy = 120, gh = 372;
-  const int bw = (W - pad * (cols + 1)) / cols;
-  const int bh = (gh - pad * (rows + 1)) / rows;
-  d.setTextSize(4);
-  for (int i = 0; i < BTN_COUNT; i++) {
-    int c = i % cols, r = i / cols;
-    int x = pad + c * (bw + pad), y = gy + r * (bh + pad);
-    bool last = (i == g_lastBtn);
-    if (last) { d.fillRoundRect(x, y, bw, bh, 14, C_B); d.setTextColor(C_W, C_B); }
-    else      { d.fillRoundRect(x, y, bw, bh, 14, C_W); d.setTextColor(C_B, C_W); }
-    d.drawRoundRect(x, y, bw, bh, 14, C_B);
-    d.drawRoundRect(x + 1, y + 1, bw - 2, bh - 2, 13, C_B);
-    drawCentered(x, y, bw, bh, PROFILES[g_profile].macros[i].label);
-  }
-
-  // log
-  int ly = gy + gh + 24;
-  d.setTextColor(C_B, C_W);
-  d.setTextSize(3);
-  d.setCursor(20, ly); d.print("Recent actions");
-  ly += 42;
-  d.drawFastHLine(20, ly, W - 40, C_B);
-  ly += 14;
-  for (int k = 0; k < g_logCount; k++) {
-    int idx = (g_logHead - 1 - k + LOGN) % LOGN;
-    const LogEntry& e = g_log[idx];
-    char line[72];
-    snprintf(line, sizeof(line), "%02lu:%02lu   %s  >  %s",
-             (unsigned long)(e.ts / 60), (unsigned long)(e.ts % 60),
-             PROFILES[e.profile].name, PROFILES[e.profile].macros[e.button].label);
-    d.setCursor(24, ly); d.print(line);
-    ly += 40;
-    if (ly > H - 40) break;
-  }
-
-  // footer
-  d.setTextSize(2);
-  d.setTextColor(C_G, C_W);
-  d.setCursor(20, H - 28);
-  d.print("ESP-KVM legend  " ESPKVM_VERSION);
-
+  d.setCursor(16, 16);
+  d.print("ESP-KVM Remote");
+  for (int i = 0; i < NITEMS; i++) drawItem(ITEMS[i], false);
+  drawFooter();
   d.endWrite();
+}
+
+static void dispatch(const RItem& it) {
+  switch (it.kind) {
+    case RK_MEDIA:  sendByte(Cmd::MEDIA, it.arg);      g_last = it.label; break;
+    case RK_IR:     sendByte(Cmd::IR, it.arg);         g_last = it.label; break;
+    case RK_METRIC: sendByte(Cmd::SET_METRIC, it.arg); g_last = it.label; break;
+    case RK_MACRO:  sendMacro(it.arg);                 g_last = it.label; break;
+    default: break;
+  }
 }
 
 void setup() {
@@ -111,33 +136,32 @@ void setup() {
   WiFi.disconnect();
   esp_wifi_set_channel(ESPNOW_CHAN, WIFI_SECOND_CHAN_NONE);
   if (esp_now_init() == ESP_OK) {
-    esp_now_register_recv_cb(onRecv);
     esp_now_peer_info_t peer = {};
-    memset(peer.peer_addr, 0xFF, 6);
-    peer.channel = ESPNOW_CHAN;
-    peer.encrypt = false;
+    memcpy(peer.peer_addr, BCAST, 6);
+    peer.channel = ESPNOW_CHAN; peer.encrypt = false;
     esp_now_add_peer(&peer);
   }
-  render(true);   // initial full refresh
+  layout();
+  renderAll();
 }
 
 void loop() {
-  if (g_have) {
-    g_have = false;
-    if (valid(g_pkt) && (Cmd)g_pkt.type == Cmd::ANNOUNCE && g_pkt.len >= sizeof(Announce)) {
-      const Announce* a = reinterpret_cast<const Announce*>(g_pkt.payload);
-      if (a->profile < PROFILE_COUNT) g_profile = a->profile;
-      if (a->button != 0xFF && a->button < BTN_COUNT) {
-        g_lastBtn = a->button;
-        g_log[g_logHead] = { g_profile, a->button, millis() / 1000 };
-        g_logHead = (g_logHead + 1) % LOGN;
-        if (g_logCount < LOGN) g_logCount++;
-      } else {
-        g_lastBtn = 0xFF;   // profile switch
+  M5.update();
+  auto t = M5.Touch.getDetail();
+  if (t.wasPressed()) {
+    for (int i = 0; i < NITEMS; i++) {
+      const RItem& it = ITEMS[i];
+      if (it.kind == RK_HEADER) continue;
+      if (t.x >= it.x && t.x < it.x + it.w && t.y >= it.y && t.y < it.y + it.h) {
+        M5.Display.setEpdMode(m5gfx::epd_mode_t::epd_fast);
+        drawItem(it, true);
+        dispatch(it);
+        drawFooter();
+        delay(140);
+        drawItem(it, false);
+        break;
       }
-      bool full = (g_renderCount++ % 8 == 0);   // periodic clean refresh
-      render(full);
     }
   }
-  delay(10);
+  delay(8);
 }

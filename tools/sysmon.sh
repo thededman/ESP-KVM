@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # ESP-KVM system monitor host script.
-# Streams "S <mem> <gpu> <cpu> <disk>" (used %) to the StickC over USB.
-# Usage: ./tools/sysmon.sh [/dev/cu.usbserial-XXXX]
+# Streams "S <mem> <gpu> <cpu> <disk>" (used %) to the DONGLE's USB-CDC serial;
+# the dongle rebroadcasts them over ESP-NOW to the (battery-powered) StickC.
+# Usage: ./tools/sysmon.sh /dev/cu.usbmodemXXXX   (the dongle's serial port)
 set -u
-PORT="${1:-$(ls -t /dev/cu.usbserial-* 2>/dev/null | head -1)}"
+PORT="${1:-$(ls -t /dev/cu.usbmodem* 2>/dev/null | head -1)}"
 if [ -z "${PORT:-}" ] || [ ! -e "$PORT" ]; then
-  echo "No serial port. Plug in the StickC and pass its port:"
-  echo "  ./tools/sysmon.sh /dev/cu.usbserial-XXXX"; exit 1
+  echo "No serial port. Pass the dongle port:"
+  echo "  ./tools/sysmon.sh /dev/cu.usbmodemXXXX"; exit 1
 fi
 exec 3<>"$PORT"
 stty -f "$PORT" 115200 cs8 -parenb -cstopb -echo raw -hupcl 2>/dev/null
