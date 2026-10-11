@@ -9,10 +9,9 @@ flashing/hardware work here manually.)
 
 ## 2026
 
-- 2026-10-11 — 2.2h — ESP-KVM built end-to-end in one session. Set up PlatformIO
-  (pioarduino / arduino-esp32 3.x) triple-env repo + private GitHub + changelog.
-  Phase 1: USB-HID + ESP-NOW coexistence on the T-Dongle S3 (hardware-verified,
-  learned its no-auto-reset flash/run quirk). Phase 2: CoreS3 touch -> ESP-NOW ->
-  dongle -> Mac control link. Phase 4: LVGL swipeable macro deck (Dev/System/
-  Snippets). Added the M5Paper e-ink legend/log node. All three verified on
-  hardware. (2.2h = measured Claude hands-on time; add any offline bench testing.)
+- 2026-10-11 — 2.7h — ESP-KVM built end-to-end in one session. PlatformIO
+  (pioarduino / arduino-esp32 3.x) multi-env repo + private GitHub + changelog.
+  Dongle: USB-HID + ESP-NOW coexistence and an ST7735 status LCD. CoreS3: LVGL
+  swipeable macro deck (anim + page dots). M5Paper: e-ink legend/log. Core2 + UnitV2
+  AI camera: presence-aware auto-lock. All five devices verified together on hardware.
+  (2.7h = measured Claude hands-on time; add any offline bench testing.)

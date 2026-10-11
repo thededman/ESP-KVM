@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`espkvm_macros.h`) let the CoreS3 tell the M5Paper the active profile and fired
   button; the M5Paper renders the profile's button legend and a log of recent
   actions. The dongle ignores `ANNOUNCE`.
+- **Core2 + UnitV2 guard node:** the Core2 reads face detections from the M5Stack
+  UnitV2 AI camera (JSON over PORT.A UART, 115200) and does presence-aware auto-lock
+  — after 15s with no face while ARMED, it fires System > Lock over ESP-NOW. On-screen
+  ARM/DISARM toggle; robust JSON parse (num / face / obj / faces).
 
 ### Fixed
 - Dongle build: strip the board's `ARDUINO_USB_MODE=1` via `build_unflags` so TinyUSB
@@ -47,3 +51,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   CoreS3's active profile and updates on swipe.
 - **Dongle status LCD verified on hardware (2026-10-11):** the T-Dongle S3's ST7735
   shows the last action + packet count and updates on each tap; BOOT toggles HID.
+- **Guard node verified on hardware (2026-10-11):** the UnitV2 detects a face, the
+  Core2 tracks PRESENT/AWAY, and arming + walking away locked the Mac via the dongle.

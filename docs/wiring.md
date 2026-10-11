@@ -40,3 +40,12 @@ proves the radio runs concurrently with the USB keyboard. Dongle MAC: `F0:9E:9E:
 ## Device MACs (for ESP-NOW pairing, Phase 2b)
 - Dongle (T-Dongle S3): `F0:9E:9E:29:E6:CC`
 - Controller (CoreS3):  `48:27:E2:66:DB:90`
+
+## Guard node: Core2 + M5Stack UnitV2 (AI camera)
+- **UnitV2** streams JSON detections over its bottom HY2.0-4P grove port, UART **115200 8N1**.
+- Power the **UnitV2 from its own USB-C** (it won't run off the grove cable).
+- **Grove cable: UnitV2 bottom grove -> Core2 PORT.A** (red). Core2 reads it on
+  `Serial2` RX=GPIO33 / TX=GPIO32 (`src/core2/main.cpp`). If no data arrives, swap RX/TX.
+- The Core2 sends `{"function":"Face Detector"}` to select the mode, then counts faces
+  and fires **System > Lock** (⌃⌘Q) over ESP-NOW after 15s AWAY while ARMED.
+- Core2 (board `m5stack-core2`) and UnitV2 both flash/power over their USB-C normally.
