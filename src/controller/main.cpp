@@ -62,6 +62,14 @@ static void touch_cb(lv_indev_drv_t*, lv_indev_data_t* data) {
 // --------------------------- UI ---------------------------
 static lv_obj_t* lbl_batt;
 static lv_obj_t* g_tv;
+static lv_obj_t* g_dots[PROFILE_COUNT];
+static lv_style_transition_dsc_t g_btn_tr;
+static const lv_style_prop_t g_btn_tr_props[] = { LV_STYLE_TRANSFORM_ZOOM, LV_STYLE_BG_COLOR, (lv_style_prop_t)0 };
+
+static void updateDots(int active) {
+  for (int i = 0; i < PROFILE_COUNT; i++)
+    lv_obj_set_style_bg_color(g_dots[i], lv_color_hex(i == active ? 0x7FD6FF : 0x3A3F4B), 0);
+}
 
 static void btn_event(lv_event_t* e) {
   intptr_t idx = (intptr_t)lv_event_get_user_data(e);
@@ -73,6 +81,7 @@ static void tv_event(lv_event_t*) {
   lv_obj_t* act = lv_tileview_get_tile_act(g_tv);
   if (!act) return;
   intptr_t pi = (intptr_t)lv_obj_get_user_data(act);
+  updateDots((int)pi);
   sendAnnounce((uint8_t)pi, 0xFF);
 }
 
@@ -86,6 +95,11 @@ static void makeButton(lv_obj_t* parent, const Macro* m, intptr_t idx, int x, in
   lv_obj_set_style_shadow_width(b, 6, 0);
   lv_obj_set_style_shadow_opa(b, LV_OPA_40, 0);
   lv_obj_set_style_shadow_ofs_y(b, 3, 0);
+  // press animation: shrink slightly, smooth transition
+  lv_obj_set_style_transform_pivot_x(b, LV_PCT(50), 0);
+  lv_obj_set_style_transform_pivot_y(b, LV_PCT(50), 0);
+  lv_obj_set_style_transform_zoom(b, 236, LV_STATE_PRESSED);
+  lv_obj_set_style_transition(b, &g_btn_tr, 0);
   lv_obj_add_event_cb(b, btn_event, LV_EVENT_CLICKED, (void*)idx);
 
   lv_obj_t* lab = lv_label_create(b);
@@ -122,6 +136,19 @@ static void build_ui() {
   lv_obj_set_style_text_font(lbl_batt, &lv_font_montserrat_16, 0);
   lv_obj_set_style_text_color(lbl_batt, lv_color_hex(0xCCCCCC), 0);
   lv_obj_align(lbl_batt, LV_ALIGN_RIGHT_MID, -2, 0);
+
+  // page-indicator dots (centered in the bar)
+  for (int i = 0; i < PROFILE_COUNT; i++) {
+    lv_obj_t* d = lv_obj_create(bar);
+    lv_obj_set_size(d, 8, 8);
+    lv_obj_set_style_radius(d, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_border_width(d, 0, 0);
+    lv_obj_clear_flag(d, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_align(d, LV_ALIGN_CENTER, (i - 1) * 16, 0);
+    g_dots[i] = d;
+  }
+
+  lv_style_transition_dsc_init(&g_btn_tr, g_btn_tr_props, lv_anim_path_ease_out, 110, 0, nullptr);
 
   lv_obj_t* tv = lv_tileview_create(scr);
   g_tv = tv;
@@ -187,6 +214,7 @@ void setup() {
   }
 
   build_ui();
+  updateDots(0);
   sendAnnounce(0, 0xFF);   // tell the M5Paper the starting profile
 }
 
