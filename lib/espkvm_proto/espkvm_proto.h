@@ -1,0 +1,83 @@
+// ESP-KVM wire protocol — shared by both the controller and the dongle.
+// Header-only so both PlatformIO environments can include it directly.
+#pragma once
+#include <stdint.h>
+#include <string.h>
+
+namespace espkvm {
+
+static constexpr uint8_t PROTO_MAGIC   = 0xE5;  // "E5" ~ ESP-KVM
+static constexpr uint8_t PROTO_VERSION = 1;
+static constexpr uint8_t MAX_PAYLOAD   = 32;
+static constexpr uint8_t MAX_KEYS      = 6;     // USB HID 6-key rollover
+
+// Command types. Controller -> dongle, except STATUS (dongle -> controller).
+enum class Cmd : uint8_t {
+  PING        = 0,
+  KEY_COMBO   = 1,   // modifiers + up to 6 HID keycodes, pressed then released
+  TYPE_STRING = 2,   // ASCII string typed as-is
+  MOUSE_MOVE  = 3,   // int8 dx, dy
+  MOUSE_BTN   = 4,   // button mask + pressed flag
+  SCROLL      = 5,   // int8 vertical, horizontal
+  MEDIA       = 6,   // consumer-control usage (play/pause, volume, ...)
+  STATUS      = 200, // dongle -> controller heartbeat
+};
+
+// Keyboard modifier bitmask (matches the USB HID modifier byte).
+enum Modifier : uint8_t {
+  MOD_NONE   = 0,
+  MOD_LCTRL  = 1 << 0,
+  MOD_LSHIFT = 1 << 1,
+  MOD_LALT   = 1 << 2,
+  MOD_LGUI   = 1 << 3,  // Cmd / Win
+  MOD_RCTRL  = 1 << 4,
+  MOD_RSHIFT = 1 << 5,
+  MOD_RALT   = 1 << 6,
+  MOD_RGUI   = 1 << 7,
+};
+
+enum MouseButton : uint8_t {
+  MB_LEFT   = 1 << 0,
+  MB_RIGHT  = 1 << 1,
+  MB_MIDDLE = 1 << 2,
+};
+
+#pragma pack(push, 1)
+struct Packet {
+  uint8_t  magic;                 // PROTO_MAGIC
+  uint8_t  version;               // PROTO_VERSION
+  uint16_t seq;                   // rolling sequence counter
+  uint8_t  type;                  // Cmd
+  uint8_t  len;                   // valid bytes in payload
+  uint8_t  payload[MAX_PAYLOAD];
+};
+
+struct KeyCombo {
+  uint8_t modifiers;              // Modifier bitmask
+  uint8_t count;                  // number of keycodes in use
+  uint8_t keys[MAX_KEYS];         // USB HID usage ids
+};
+
+struct MouseMove { int8_t dx; int8_t dy; };
+struct Scroll    { int8_t v;  int8_t h;  };
+struct MouseBtn  { uint8_t buttons; uint8_t pressed; };
+struct Status    { uint8_t linked; uint8_t hid_enabled; int8_t rssi; };
+#pragma pack(pop)
+
+// Build a packet from an arbitrary payload struct.
+static inline Packet make_packet(Cmd type, const void* data, uint8_t len, uint16_t seq) {
+  Packet p{};
+  p.magic   = PROTO_MAGIC;
+  p.version = PROTO_VERSION;
+  p.seq     = seq;
+  p.type    = static_cast<uint8_t>(type);
+  p.len     = (len > MAX_PAYLOAD) ? MAX_PAYLOAD : len;
+  if (data && p.len) memcpy(p.payload, data, p.len);
+  return p;
+}
+
+static inline bool valid(const Packet& p) {
+  return p.magic == PROTO_MAGIC && p.version == PROTO_VERSION;
+}
+
+} // namespace espkvm
