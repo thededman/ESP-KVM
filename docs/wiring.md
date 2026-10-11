@@ -49,3 +49,11 @@ proves the radio runs concurrently with the USB keyboard. Dongle MAC: `F0:9E:9E:
 - The Core2 sends `{"function":"Face Detector"}` to select the mode, then counts faces
   and fires **System > Lock** (⌃⌘Q) over ESP-NOW after 15s AWAY while ARMED.
 - Core2 (board `m5stack-core2`) and UnitV2 both flash/power over their USB-C normally.
+
+## RAM meter: M5StickC Plus2 + SK6812 flex strip
+- Strip (30x SK6812) connects to the **StickC Plus2 grove port**; data on **G32**.
+- StickC tethers to the Mac over USB. Run `tools/ram-meter.sh /dev/cu.usbserial-XXXX`
+  on the Mac: it reads `memory_pressure` and streams `R<used%>` lines @115200.
+  (The script opens the port *then* sets the baud — macOS resets termios on open.)
+- Firmware shows the % + bar on the StickC screen and the strip as a green->amber->red
+  progress bar. Tune `RAM_LEDS` / `RAM_DATA_PIN` build flags for other strips.
