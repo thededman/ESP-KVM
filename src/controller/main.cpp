@@ -1,18 +1,18 @@
-// ESP-KVM controller — Phase 4: LVGL touch macro deck.
-// Swipeable profile pages (Dev / System / Snippets) of styled buttons; a tap
-// sends the matching command to the dongle over ESP-NOW (broadcast, channel 1).
-// Top status bar shows battery. LVGL draws to the CoreS3 via M5Unified.
+// ESP-KVM controller — Phase 4: LVGL touch macro deck (+ ANNOUNCE for M5Paper).
+// Swipeable profile pages of styled buttons; a tap sends the command to the dongle
+// AND an ANNOUNCE (profile+button) so the M5Paper can show the legend/log. A swipe
+// sends an ANNOUNCE with button=0xFF (profile switch only).
 #include <M5Unified.h>
 #include <lvgl.h>
 #include <WiFi.h>
 #include <esp_now.h>
 #include <esp_wifi.h>
 #include <espkvm_proto.h>
+#include <espkvm_macros.h>
 #include "common/version.h"
 
 using namespace espkvm;
 
-// --------------------------- ESP-NOW ---------------------------
 static uint8_t  BCAST[6] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
 static constexpr uint8_t ESPNOW_CHAN = 1;
 static uint16_t g_seq = 0;
@@ -20,47 +20,11 @@ static uint16_t g_seq = 0;
 static void sendPacket(const Packet& p) {
   esp_now_send(BCAST, reinterpret_cast<const uint8_t*>(&p), sizeof(p));
 }
-
-// --------------------------- macro model ---------------------------
-enum Kind : uint8_t { K_STR, K_COMBO };
-struct Macro {
-  const char* label;
-  uint32_t    rgb;     // button color 0xRRGGBB
-  Kind        kind;
-  const char* str;     // K_STR payload
-  uint8_t     mods;    // K_COMBO modifiers
-  uint8_t     key;     // K_COMBO key (ASCII or espkvm::key::*)
-};
-
-static const Macro DEV[6] = {
-  {"Copy",   0x2E7D32, K_COMBO, nullptr, MOD_LGUI, 'c'},
-  {"Paste",  0x1565C0, K_COMBO, nullptr, MOD_LGUI, 'v'},
-  {"Cut",    0xAD1457, K_COMBO, nullptr, MOD_LGUI, 'x'},
-  {"Undo",   0x6A1B9A, K_COMBO, nullptr, MOD_LGUI, 'z'},
-  {"Save",   0xEF6C00, K_COMBO, nullptr, MOD_LGUI, 's'},
-  {"Find",   0x00838F, K_COMBO, nullptr, MOD_LGUI, 'f'},
-};
-static const Macro SYS[6] = {
-  {"Spotlight", 0x1565C0, K_COMBO, nullptr, MOD_LGUI, ' '},
-  {"Mission",   0x00838F, K_COMBO, nullptr, MOD_LCTRL, key::UP},
-  {"App Switch",0x6A1B9A, K_COMBO, nullptr, MOD_LGUI, key::TAB},
-  {"Screenshot",0xEF6C00, K_COMBO, nullptr, (uint8_t)(MOD_LGUI|MOD_LSHIFT), '4'},
-  {"Lock",      0xC62828, K_COMBO, nullptr, (uint8_t)(MOD_LCTRL|MOD_LGUI), 'q'},
-  {"Desktop",   0x2E7D32, K_COMBO, nullptr, 0, key::F11},
-};
-static const Macro SNIP[6] = {
-  {"Hello",  0x2E7D32, K_STR, "Hello from ESP-KVM!\n", 0, 0},
-  {"Email",  0x1565C0, K_STR, "you@example.com", 0, 0},
-  {"Thanks", 0x00838F, K_STR, "Thanks!\n", 0, 0},
-  {"Sig",    0x6A1B9A, K_STR, "\n-- David\n", 0, 0},
-  {"Code",   0xEF6C00, K_STR, "console.log();", 0, 0},
-  {"Arrow",  0xAD1457, K_STR, " => ", 0, 0},
-};
-struct Profile { const char* name; const Macro* macros; };
-static const Profile PROFILES[3] = {
-  {"Dev", DEV}, {"System", SYS}, {"Snippets", SNIP},
-};
-
+static void sendAnnounce(uint8_t pi, uint8_t bi) {
+  Announce a{pi, bi};
+  Packet p = make_packet(Cmd::ANNOUNCE, &a, sizeof(a), g_seq++);
+  sendPacket(p);
+}
 static void fireMacro(const Macro* m) {
   if (m->kind == K_STR) {
     Packet p = make_packet(Cmd::TYPE_STRING, m->str, (uint8_t)strlen(m->str), g_seq++);
@@ -85,13 +49,11 @@ static void flush_cb(lv_disp_drv_t* drv, const lv_area_t* area, lv_color_t* colo
   M5.Display.endWrite();
   lv_disp_flush_ready(drv);
 }
-
 static void touch_cb(lv_indev_drv_t*, lv_indev_data_t* data) {
   auto t = M5.Touch.getDetail();
   if (t.isPressed() || t.isHolding()) {
-    data->state   = LV_INDEV_STATE_PRESSED;
-    data->point.x = t.x;
-    data->point.y = t.y;
+    data->state = LV_INDEV_STATE_PRESSED;
+    data->point.x = t.x; data->point.y = t.y;
   } else {
     data->state = LV_INDEV_STATE_RELEASED;
   }
@@ -99,13 +61,22 @@ static void touch_cb(lv_indev_drv_t*, lv_indev_data_t* data) {
 
 // --------------------------- UI ---------------------------
 static lv_obj_t* lbl_batt;
+static lv_obj_t* g_tv;
 
 static void btn_event(lv_event_t* e) {
-  const Macro* m = static_cast<const Macro*>(lv_event_get_user_data(e));
-  fireMacro(m);
+  intptr_t idx = (intptr_t)lv_event_get_user_data(e);
+  uint8_t pi = (uint8_t)(idx / BTN_COUNT), bi = (uint8_t)(idx % BTN_COUNT);
+  fireMacro(&PROFILES[pi].macros[bi]);
+  sendAnnounce(pi, bi);
+}
+static void tv_event(lv_event_t*) {
+  lv_obj_t* act = lv_tileview_get_tile_act(g_tv);
+  if (!act) return;
+  intptr_t pi = (intptr_t)lv_obj_get_user_data(act);
+  sendAnnounce((uint8_t)pi, 0xFF);
 }
 
-static void makeButton(lv_obj_t* parent, const Macro* m, int x, int y, int w, int h) {
+static void makeButton(lv_obj_t* parent, const Macro* m, intptr_t idx, int x, int y, int w, int h) {
   lv_obj_t* b = lv_btn_create(parent);
   lv_obj_set_pos(b, x, y);
   lv_obj_set_size(b, w, h);
@@ -115,7 +86,7 @@ static void makeButton(lv_obj_t* parent, const Macro* m, int x, int y, int w, in
   lv_obj_set_style_shadow_width(b, 6, 0);
   lv_obj_set_style_shadow_opa(b, LV_OPA_40, 0);
   lv_obj_set_style_shadow_ofs_y(b, 3, 0);
-  lv_obj_add_event_cb(b, btn_event, LV_EVENT_CLICKED, (void*)m);
+  lv_obj_add_event_cb(b, btn_event, LV_EVENT_CLICKED, (void*)idx);
 
   lv_obj_t* lab = lv_label_create(b);
   lv_label_set_text(lab, m->label);
@@ -129,11 +100,8 @@ static void build_ui() {
   lv_obj_set_style_bg_color(scr, lv_color_hex(0x0A0A12), 0);
   lv_obj_clear_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
 
-  const int W = M5.Display.width();     // 240 (portrait)
-  const int H = M5.Display.height();    // 320
-  const int BAR_H = 30;
+  const int W = M5.Display.width(), H = M5.Display.height(), BAR_H = 30;
 
-  // --- status bar ---
   lv_obj_t* bar = lv_obj_create(scr);
   lv_obj_set_size(bar, W, BAR_H);
   lv_obj_set_pos(bar, 0, 0);
@@ -155,20 +123,20 @@ static void build_ui() {
   lv_obj_set_style_text_color(lbl_batt, lv_color_hex(0xCCCCCC), 0);
   lv_obj_align(lbl_batt, LV_ALIGN_RIGHT_MID, -2, 0);
 
-  // --- swipeable profile pages ---
   lv_obj_t* tv = lv_tileview_create(scr);
+  g_tv = tv;
   lv_obj_set_pos(tv, 0, BAR_H);
   lv_obj_set_size(tv, W, H - BAR_H);
   lv_obj_set_style_bg_color(tv, lv_color_hex(0x0A0A12), 0);
+  lv_obj_add_event_cb(tv, tv_event, LV_EVENT_VALUE_CHANGED, nullptr);
 
-  const int th = H - BAR_H;             // tile height
-  const int HDR = 30;                   // profile-name header
-  const int PAD = 8, COLS = 2, ROWS = 3;
+  const int th = H - BAR_H, HDR = 30, PAD = 8, COLS = 2, ROWS = 3;
   const int bw = (W - PAD * (COLS + 1)) / COLS;
   const int bh = (th - HDR - PAD * (ROWS + 1)) / ROWS;
 
-  for (int pi = 0; pi < 3; pi++) {
+  for (int pi = 0; pi < PROFILE_COUNT; pi++) {
     lv_obj_t* tile = lv_tileview_add_tile(tv, pi, 0, LV_DIR_HOR);
+    lv_obj_set_user_data(tile, (void*)(intptr_t)pi);
     lv_obj_clear_flag(tile, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_t* name = lv_label_create(tile);
@@ -177,11 +145,11 @@ static void build_ui() {
     lv_obj_set_style_text_color(name, lv_color_hex(0xFFFFFF), 0);
     lv_obj_align(name, LV_ALIGN_TOP_MID, 0, 4);
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < BTN_COUNT; i++) {
       int col = i % COLS, row = i / COLS;
       int x = PAD + col * (bw + PAD);
       int y = HDR + PAD + row * (bh + PAD);
-      makeButton(tile, &PROFILES[pi].macros[i], x, y, bw, bh);
+      makeButton(tile, &PROFILES[pi].macros[i], pi * BTN_COUNT + i, x, y, bw, bh);
     }
   }
 }
@@ -189,21 +157,21 @@ static void build_ui() {
 void setup() {
   auto cfg = M5.config();
   M5.begin(cfg);
-  M5.Display.setRotation(2);            // portrait, USB-C at bottom
+  M5.Display.setRotation(2);
 
   lv_init();
   lv_disp_draw_buf_init(&draw_buf, lvbuf, nullptr, 240 * 40);
   static lv_disp_drv_t disp_drv;
   lv_disp_drv_init(&disp_drv);
-  disp_drv.hor_res  = M5.Display.width();
-  disp_drv.ver_res  = M5.Display.height();
+  disp_drv.hor_res = M5.Display.width();
+  disp_drv.ver_res = M5.Display.height();
   disp_drv.flush_cb = flush_cb;
   disp_drv.draw_buf = &draw_buf;
   lv_disp_drv_register(&disp_drv);
 
   static lv_indev_drv_t indev_drv;
   lv_indev_drv_init(&indev_drv);
-  indev_drv.type    = LV_INDEV_TYPE_POINTER;
+  indev_drv.type = LV_INDEV_TYPE_POINTER;
   indev_drv.read_cb = touch_cb;
   lv_indev_drv_register(&indev_drv);
 
@@ -219,18 +187,17 @@ void setup() {
   }
 
   build_ui();
+  sendAnnounce(0, 0xFF);   // tell the M5Paper the starting profile
 }
 
 void loop() {
   M5.update();
   lv_timer_handler();
-
   static uint32_t lastBatt = 0;
   if (millis() - lastBatt > 5000) {
     lastBatt = millis();
-    int lvl = M5.Power.getBatteryLevel();
     char buf[8];
-    snprintf(buf, sizeof(buf), "%d%%", lvl);
+    snprintf(buf, sizeof(buf), "%d%%", M5.Power.getBatteryLevel());
     lv_label_set_text(lbl_batt, buf);
   }
   delay(5);

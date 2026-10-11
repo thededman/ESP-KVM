@@ -28,3 +28,7 @@ flashing/hardware work here manually.)
   (flush + touch glue, lv_conf), rebuilt the CoreS3 UI: status bar w/ battery and a
   swipeable 3-profile tileview (Dev/System/Snippets) of styled buttons. Verified on
   hardware: swipe + button taps work. (Estimate — adjust to actual.)
+- 2026-10-11 — 1.0h — Added the M5Paper e-ink node. New ANNOUNCE message + shared
+  macro table so the CoreS3 drives an ambient legend/log on the M5Paper (original
+  ESP32, board m5stack_paper). Flashed all three; verified the legend tracks the
+  active profile over ESP-NOW. (Estimate — adjust to actual.)
