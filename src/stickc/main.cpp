@@ -98,17 +98,18 @@ static void drawScreen() {
 // Sharp TV IR codes (address 0x01). NOTE: best-guess set; if your TV ignores
 // them we will capture the real codes from your remote.
 static void blastIR(uint8_t act) {
-  const uint16_t ADDR = 0x01;
+  // Hisense-made Sharp (LC-50P7000U) — official Hisense discrete IR, NEC address 0x04.
+  // Use encodeNEC() so IRremoteESP8266 emits the correct bit/byte order.
   uint16_t cmd = 0; const char* lbl = "?";
   switch (act) {
-    case IR_TV_POWER:   cmd = 0x16; lbl = "POWER";  break;
-    case IR_TV_VOLUP:   cmd = 0x02; lbl = "VOL+";   break;
-    case IR_TV_VOLDOWN: cmd = 0x03; lbl = "VOL-";   break;
-    case IR_TV_MUTE:    cmd = 0x06; lbl = "MUTE";   break;
-    case IR_TV_INPUT:   cmd = 0x0B; lbl = "INPUT";  break;
+    case IR_TV_POWER:   cmd = 0x70; lbl = "POWER"; break;   // power toggle
+    case IR_TV_VOLUP:   cmd = 0xA6; lbl = "VOL+";  break;
+    case IR_TV_VOLDOWN: cmd = 0xA5; lbl = "VOL-";  break;
+    case IR_TV_MUTE:    cmd = 0x49; lbl = "MUTE";  break;   // not in discrete list; best-guess
+    case IR_TV_INPUT:   cmd = 0x73; lbl = "INPUT"; break;   // input toggle
     default: return;
   }
-  irsend.sendSharp(ADDR, cmd);
+  irsend.sendNEC(irsend.encodeNEC(0x04, cmd), 32, 2);
   g_irLabel = lbl; g_irFlash = millis();
 }
 
