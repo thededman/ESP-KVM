@@ -6,6 +6,7 @@ A wireless macro deck + trackpad for **your own** computer, built from ESP32 gea
   USB keyboard + mouse.
 - **Controller** — M5Stack **CoreS3** touchscreen is the wireless remote (LVGL UI).
 - **Legend** — M5Paper (e-ink) shows the active profile's button map + an action log.
+- **Guard** — Core2 + M5Stack UnitV2 AI camera: presence-aware auto-lock (face gone -> Lock).
 - **Link** — ESP-NOW, no Wi-Fi router required.
 
 Tap a touch button to fire a macro (key combo, text snippet, media key), or use the
@@ -21,6 +22,7 @@ trackpad screen to drive the mouse. Think DIY Elgato Stream Deck.
 | Dongle | LilyGO T-Dongle S3 (ESP32-S3) | 0.96" ST7735 160x80 | USB-HID + ESP-NOW |
 | Controller | M5Stack CoreS3 (ESP32-S3) | 2.0" 320x240 cap-touch | ESP-NOW |
 | Legend (optional) | M5Paper (ESP32) | 4.7" e-ink 540x960 | ESP-NOW |
+| Guard (optional) | M5Stack Core2 (ESP32) + UnitV2 AI camera | 2.0" 320x240 | ESP-NOW + UART |
 
 ## Build (PlatformIO)
 
@@ -29,6 +31,7 @@ pio run                      # compile both environments
 pio run -e dongle            # compile just the dongle
 pio run -e controller        # compile just the controller
 pio run -e paper             # compile the M5Paper e-ink legend
+pio run -e core2             # compile the Core2 UnitV2 guard bridge
 pio run -e controller -t upload   # flash the CoreS3 (USB-C)
 pio run -e dongle -t upload       # flash the dongle (enter BOOT download mode first)
 ```

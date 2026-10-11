@@ -39,7 +39,8 @@ static uint32_t g_lastData = 0;
 static bool     g_armed = false;
 static bool     g_locked = false;
 static uint32_t g_lockCount = 0;
-static char     g_rawTail[40] = "(waiting for UnitV2...)";
+static char     g_raw[256] = "(waiting for UnitV2...)";
+static int      g_dbgNum = -999, g_dbgArr = -1;
 
 static void sendFunction(const char* fn) {
   JsonDocument d; d["function"] = fn; d["args"] = "";
@@ -56,22 +57,17 @@ static void draw() {
   d.startWrite();
   d.fillScreen(0x0000);
 
-  // header
   d.fillRect(0, 0, W, 30, 0x10A2);
   d.setTextColor(0x7FFF, 0x10A2); d.setTextSize(2); d.setCursor(6, 7);
   d.print("ESP-KVM Guard");
 
-  // presence
   bool present = g_faces > 0;
-  uint16_t col = present ? 0x2FE6 : 0xFD20;   // green / orange
-  d.setTextColor(col, 0x0000); d.setTextSize(3);
-  d.setCursor(10, 48);
+  uint16_t col = present ? 0x2FE6 : 0xFD20;
+  d.setTextColor(col, 0x0000); d.setTextSize(3); d.setCursor(10, 48);
   d.printf("%s", present ? "PRESENT" : "AWAY");
-  d.setTextColor(0xFFFF, 0x0000); d.setTextSize(2);
-  d.setCursor(10, 86);
+  d.setTextColor(0xFFFF, 0x0000); d.setTextSize(2); d.setCursor(10, 86);
   d.printf("faces: %d", g_faces);
 
-  // countdown / lock state
   d.setTextSize(2); d.setCursor(10, 112);
   if (g_locked) { d.setTextColor(0xF800, 0x0000); d.print("LOCKED (sent)"); }
   else if (!present && g_armed) {
@@ -80,21 +76,18 @@ static void draw() {
     d.setTextColor(0xFD20, 0x0000); d.printf("Lock in %ds ", secs);
   } else { d.setTextColor(0x8410, 0x0000); d.print(g_armed ? "armed" : "disarmed"); }
 
-  // ARM/DISARM button
   BTN_X = 10; BTN_Y = 150; BTN_W = W - 20; BTN_H = 50;
   uint16_t bc = g_armed ? 0xC000 : 0x4208;
   d.fillRoundRect(BTN_X, BTN_Y, BTN_W, BTN_H, 10, bc);
-  d.setTextColor(0xFFFF, bc); d.setTextSize(3);
+  d.setTextColor(0xFFFF, bc); d.setTextSize(2);
   const char* bl = g_armed ? "ARMED - tap to disarm" : "DISARMED - tap to ARM";
-  d.setTextSize(2);
   int tw = d.textWidth(bl);
   d.setCursor(BTN_X + (BTN_W - tw) / 2, BTN_Y + 16);
   d.print(bl);
 
-  // footer: locks + raw tail
   d.setTextColor(0x8C71, 0x0000); d.setTextSize(1);
-  d.setCursor(10, H - 24); d.printf("locks:%lu  %s", (unsigned long)g_lockCount, ESPKVM_VERSION);
-  d.setCursor(10, H - 12); d.printf("uv2: %s", g_rawTail);
+  d.setCursor(10, H - 12);
+  d.printf("locks:%lu  faces live  %s", (unsigned long)g_lockCount, ESPKVM_VERSION);
   d.endWrite();
 }
 
@@ -135,18 +128,22 @@ void loop() {
           String js = line.substring(b);
           JsonDocument doc;
           if (!deserializeJson(doc, js)) {
-            int n = doc["num"] | -1;
-            if (n < 0) n = doc["face"].is<JsonArray>() ? (int)doc["face"].size() : 0;
-            g_faces = n;
+            int num = doc["num"] | -999;
+            int arr = -1;
+            if (doc["face"].is<JsonArray>())       arr = doc["face"].size();
+            else if (doc["faces"].is<JsonArray>()) arr = doc["faces"].size();
+            else if (doc["obj"].is<JsonArray>())   arr = doc["obj"].size();
+            g_dbgNum = num; g_dbgArr = arr;
+            g_faces = (arr >= 0) ? arr : (num > -999 ? num : 0);
             g_lastData = millis();
             if (g_faces > 0) { g_lastSeen = millis(); g_locked = false; }
-            strncpy(g_rawTail, js.c_str(), sizeof(g_rawTail) - 1);
-            g_rawTail[sizeof(g_rawTail) - 1] = 0;
+            strncpy(g_raw, js.c_str(), sizeof(g_raw) - 1);
+            g_raw[sizeof(g_raw) - 1] = 0;
           }
         }
       }
       line = "";
-    } else if (line.length() < 200) {
+    } else if (line.length() < 300) {
       line += ch;
     }
   }
