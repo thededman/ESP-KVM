@@ -1,4 +1,4 @@
-// ESP-KVM M5Paper — paginated touch remote (v0.2.0).
+// Papyrus — ESP-KVM M5Paper e-ink touch remote (v0.2.0).
 // Big e-ink touch buttons grouped into pages; the side wheel (BtnA up / BtnC down /
 // BtnB press) flips pages. A tap sends the matching command over ESP-NOW.
 #include <M5Unified.h>
@@ -101,7 +101,7 @@ static void drawFooter() {
   d.drawFastHLine(0, y, d.width(), C_B);
   d.setFont(&fonts::FreeSans9pt7b); d.setTextColor(C_B, C_W);
   d.setCursor(14, y + 14);
-  d.printf("last: %s     wheel = page     %s", g_last, ESPKVM_VERSION);
+  d.printf("last: %s     wheel = page     Papyrus %s", g_last, ESPKVM_VERSION);
 }
 static void renderAll() {
   auto& d = M5.Display;
@@ -110,7 +110,7 @@ static void renderAll() {
   d.fillScreen(C_W);
   d.fillRect(0, 0, d.width(), 80, C_B);
   d.setFont(&fonts::FreeSansBold24pt7b); d.setTextColor(C_W, C_B);
-  d.setCursor(16, 18); d.print("ESP-KVM Remote");
+  d.setCursor(16, 18); d.print("Papyrus");
   d.setFont(&fonts::FreeSansBold18pt7b);
   char pg[16]; snprintf(pg, sizeof(pg), "%d/%d", g_page + 1, NPAGES);
   int tw = d.textWidth(pg); d.setCursor(d.width() - tw - 16, 22); d.print(pg);

@@ -22,7 +22,7 @@ trackpad screen to drive the mouse. Think DIY Elgato Stream Deck.
 |------|-------|---------|------|
 | Dongle | LilyGO T-Dongle S3 (ESP32-S3) | 0.96" ST7735 160x80 | USB-HID + ESP-NOW |
 | Controller | M5Stack CoreS3 (ESP32-S3) | 2.0" 320x240 cap-touch | ESP-NOW |
-| Legend (optional) | M5Paper (ESP32) | 4.7" e-ink 540x960 | ESP-NOW |
+| **Papyrus** remote (optional) | M5Paper (ESP32) | 4.7" e-ink 540x960 | ESP-NOW |
 | Guard (optional) | M5Stack Core2 (ESP32) + UnitV2 AI camera | 2.0" 320x240 | ESP-NOW + UART |
 | System monitor (optional) | M5StickC Plus2 (ESP32) + SK6812 strip | 1.14" + 30 LEDs | USB serial + ESP-NOW |
 
