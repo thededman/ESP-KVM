@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-11
+
+### Added
+- **Media / volume keys:** the dongle adds USB consumer-control — Vol+/-, Mute,
+  Play/Pause, Next, Prev (`Cmd::MEDIA`).
+- **M5Paper touch remote:** the e-ink is now an interactive, paginated touch remote
+  (FreeSans fonts) with Media / TV / Mac / Monitor buttons; the side wheel (BtnA/BtnB/
+  BtnC) flips pages. Sends MEDIA / KEY_COMBO / IR / SET_METRIC over ESP-NOW.
+- **IR TV control:** the StickC Plus2 is an IR blaster (IRremoteESP8266, GPIO19) driven
+  by `Cmd::IR`. Verified powering a Hisense-made Sharp LC-50P7000U with official Hisense
+  NEC codes via `encodeNEC`.
+- **Wireless system monitor:** the CoreS3 relays Mac stats from its USB serial to the
+  StickC over ESP-NOW (`Cmd::STATS`), so the StickC runs untethered on battery. Host
+  script `tools/sysmon.sh`.
+
+### Changed
+- Moved the stats path off a dongle USB HID+CDC composite (unreliable — the HID
+  interface dropped) to the CoreS3 relay; the dongle stays a clean HID device.
+
+### Verified
+- IR TV Power toggled the TV on hardware; M5Paper metric switching (MEM/GPU/CPU) works.
+
 ## [0.1.0] - 2026-10-11
 
 ### Added
@@ -63,5 +85,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **System monitor verified on hardware (2026-10-11):** StickC Button A cycles
   MEM/GPU/CPU/DISK and the CoreS3 Monitor page switches the metric over ESP-NOW.
 
-[Unreleased]: https://github.com/thededman/ESP-KVM/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/thededman/ESP-KVM/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/thededman/ESP-KVM/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/thededman/ESP-KVM/releases/tag/v0.1.0

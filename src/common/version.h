@@ -1,3 +1,3 @@
 #pragma once
 // Firmware version shared by both builds. Bump alongside CHANGELOG releases.
-#define ESPKVM_VERSION "0.2.0-dev"
+#define ESPKVM_VERSION "0.2.0"
