@@ -20,6 +20,7 @@ enum class Cmd : uint8_t {
   MOUSE_BTN   = 4,   // button mask + pressed flag
   SCROLL      = 5,   // int8 vertical, horizontal
   MEDIA       = 6,   // consumer-control usage (play/pause, volume, ...)
+  SET_METRIC  = 7,   // controller -> StickC: which system metric to show
   ANNOUNCE    = 100, // controller -> M5Paper: profile/button context
   STATUS      = 200, // dongle -> controller heartbeat
 };

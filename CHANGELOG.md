@@ -30,10 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   UnitV2 AI camera (JSON over PORT.A UART, 115200) and does presence-aware auto-lock
   — after 15s with no face while ARMED, it fires System > Lock over ESP-NOW. On-screen
   ARM/DISARM toggle; robust JSON parse (num / face / obj / faces).
-- **RAM meter node:** M5StickC Plus2 drives a 30-LED SK6812 flex strip as an ambient
-  Mac RAM gauge (green->amber->red progress bar) + on-screen %. A host script
-  (`tools/ram-meter.sh`) streams `memory_pressure` over USB serial. Double-buffered
-  display; LED count / data pin are build flags.
+- **System monitor node:** M5StickC Plus2 drives a 30-LED SK6812 flex strip as an
+  ambient Mac gauge, switchable between **MEM / GPU / CPU / DISK** via the StickC's
+  Button A or a new CoreS3 **Monitor** page (over ESP-NOW, `SET_METRIC`). Host script
+  `tools/sysmon.sh` streams all four metrics over USB serial. Double-buffered displays;
+  CoreS3 gains a 4th swipe page + dot.
 
 ### Fixed
 - Dongle build: strip the board's `ARDUINO_USB_MODE=1` via `build_unflags` so TinyUSB
@@ -57,5 +58,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shows the last action + packet count and updates on each tap; BOOT toggles HID.
 - **Guard node verified on hardware (2026-10-11):** the UnitV2 detects a face, the
   Core2 tracks PRESENT/AWAY, and arming + walking away locked the Mac via the dongle.
-- **RAM meter verified on hardware (2026-10-11):** the StickC receives RAM% over USB
-  and the SK6812 strip fills green as a live gauge.
+- **System monitor verified on hardware (2026-10-11):** StickC Button A cycles
+  MEM/GPU/CPU/DISK and the CoreS3 Monitor page switches the metric over ESP-NOW.

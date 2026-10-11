@@ -47,4 +47,8 @@ static const Profile PROFILES[3] = { {"Dev", DEV}, {"System", SYS}, {"Snippets",
 static constexpr uint8_t PROFILE_COUNT = 3;
 static constexpr uint8_t BTN_COUNT     = 6;
 
+// System-monitor metrics shared by the StickC meter and the CoreS3 Monitor page.
+enum Metric : uint8_t { MET_MEM = 0, MET_GPU = 1, MET_CPU = 2, MET_DISK = 3, MET_COUNT = 4 };
+static const char* const METRIC_NAMES[MET_COUNT] = { "MEM", "GPU", "CPU", "DISK" };
+
 } // namespace espkvm

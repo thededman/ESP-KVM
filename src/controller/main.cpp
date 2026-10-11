@@ -62,13 +62,21 @@ static void touch_cb(lv_indev_drv_t*, lv_indev_data_t* data) {
 // --------------------------- UI ---------------------------
 static lv_obj_t* lbl_batt;
 static lv_obj_t* g_tv;
-static lv_obj_t* g_dots[PROFILE_COUNT];
+static constexpr int NUM_TILES = PROFILE_COUNT + 1;   // 3 profiles + Monitor
+static lv_obj_t* g_dots[NUM_TILES];
 static lv_style_transition_dsc_t g_btn_tr;
 static const lv_style_prop_t g_btn_tr_props[] = { LV_STYLE_TRANSFORM_ZOOM, LV_STYLE_BG_COLOR, (lv_style_prop_t)0 };
 
 static void updateDots(int active) {
-  for (int i = 0; i < PROFILE_COUNT; i++)
+  for (int i = 0; i < NUM_TILES; i++)
     lv_obj_set_style_bg_color(g_dots[i], lv_color_hex(i == active ? 0x7FD6FF : 0x3A3F4B), 0);
+}
+static void sendMetric(uint8_t m) {
+  Packet p = make_packet(Cmd::SET_METRIC, &m, 1, g_seq++);
+  sendPacket(p);
+}
+static void metric_event(lv_event_t* e) {
+  sendMetric((uint8_t)(intptr_t)lv_event_get_user_data(e));
 }
 
 static void btn_event(lv_event_t* e) {
@@ -82,7 +90,7 @@ static void tv_event(lv_event_t*) {
   if (!act) return;
   intptr_t pi = (intptr_t)lv_obj_get_user_data(act);
   updateDots((int)pi);
-  sendAnnounce((uint8_t)pi, 0xFF);
+  if (pi < PROFILE_COUNT) sendAnnounce((uint8_t)pi, 0xFF);
 }
 
 static void makeButton(lv_obj_t* parent, const Macro* m, intptr_t idx, int x, int y, int w, int h) {
@@ -138,13 +146,13 @@ static void build_ui() {
   lv_obj_align(lbl_batt, LV_ALIGN_RIGHT_MID, -2, 0);
 
   // page-indicator dots (centered in the bar)
-  for (int i = 0; i < PROFILE_COUNT; i++) {
+  for (int i = 0; i < NUM_TILES; i++) {
     lv_obj_t* d = lv_obj_create(bar);
-    lv_obj_set_size(d, 8, 8);
+    lv_obj_set_size(d, 7, 7);
     lv_obj_set_style_radius(d, LV_RADIUS_CIRCLE, 0);
     lv_obj_set_style_border_width(d, 0, 0);
     lv_obj_clear_flag(d, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_align(d, LV_ALIGN_CENTER, (i - 1) * 16, 0);
+    lv_obj_align(d, LV_ALIGN_CENTER, i * 14 - 21, 0);
     g_dots[i] = d;
   }
 
@@ -177,6 +185,42 @@ static void build_ui() {
       int x = PAD + col * (bw + PAD);
       int y = HDR + PAD + row * (bh + PAD);
       makeButton(tile, &PROFILES[pi].macros[i], pi * BTN_COUNT + i, x, y, bw, bh);
+    }
+  }
+
+  // Monitor tile: 2x2 buttons that set the StickC's active metric over ESP-NOW.
+  {
+    lv_obj_t* mt = lv_tileview_add_tile(tv, PROFILE_COUNT, 0, LV_DIR_HOR);
+    lv_obj_set_user_data(mt, (void*)(intptr_t)PROFILE_COUNT);
+    lv_obj_clear_flag(mt, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_t* mn = lv_label_create(mt);
+    lv_label_set_text(mn, "Monitor");
+    lv_obj_set_style_text_font(mn, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(mn, lv_color_hex(0xFFFFFF), 0);
+    lv_obj_align(mn, LV_ALIGN_TOP_MID, 0, 4);
+    const uint32_t mcol[MET_COUNT] = { 0x1565C0, 0x6A1B9A, 0xEF6C00, 0x00838F };
+    const int mc = 2, mr = 2;
+    int mbw = (W - PAD * (mc + 1)) / mc;
+    int mbh = (th - HDR - PAD * (mr + 1)) / mr;
+    for (int i = 0; i < MET_COUNT; i++) {
+      int col = i % mc, row = i / mc;
+      int bx = PAD + col * (mbw + PAD);
+      int by = HDR + PAD + row * (mbh + PAD);
+      lv_obj_t* b = lv_btn_create(mt);
+      lv_obj_set_pos(b, bx, by); lv_obj_set_size(b, mbw, mbh);
+      lv_obj_set_style_radius(b, 12, 0);
+      lv_obj_set_style_bg_color(b, lv_color_hex(mcol[i]), 0);
+      lv_obj_set_style_bg_color(b, lv_color_hex(0xFFFFFF), LV_STATE_PRESSED);
+      lv_obj_set_style_transform_pivot_x(b, LV_PCT(50), 0);
+      lv_obj_set_style_transform_pivot_y(b, LV_PCT(50), 0);
+      lv_obj_set_style_transform_zoom(b, 236, LV_STATE_PRESSED);
+      lv_obj_set_style_transition(b, &g_btn_tr, 0);
+      lv_obj_add_event_cb(b, metric_event, LV_EVENT_CLICKED, (void*)(intptr_t)i);
+      lv_obj_t* lab = lv_label_create(b);
+      lv_label_set_text(lab, METRIC_NAMES[i]);
+      lv_obj_set_style_text_font(lab, &lv_font_montserrat_20, 0);
+      lv_obj_set_style_text_color(lab, lv_color_hex(0xFFFFFF), 0);
+      lv_obj_center(lab);
     }
   }
 }
