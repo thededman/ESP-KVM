@@ -13,3 +13,9 @@ flashing/hardware work here manually.)
   dongle + CoreS3 LVGL remote over ESP-NOW). Verified hardware capabilities, scaffolded
   PlatformIO dual-env repo, shared protocol, Phase 1 USB-HID+ESP-NOW coexistence spike,
   CoreS3 boot splash. (Hours are an estimate — adjust to actual.)
+- 2026-10-11 — 1.5h — Hardware bring-up. Installed PlatformIO (pioarduino / arduino-esp32
+  3.3.12), got both envs compiling, created private GitHub repo (thededman/ESP-KVM) and
+  pushed. Flashed the dongle and debugged USB enumeration: learned the T-Dongle S3 needs
+  a physical power-cycle to run new firmware (no auto-reset) and BOOT-hold to flash.
+  Confirmed Phase 1 on hardware — USB-HID keyboard + ESP-NOW coexist (typed tx=155).
+  (Estimate — adjust to actual.)

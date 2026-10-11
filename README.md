@@ -32,6 +32,10 @@ pio run -e dongle -t upload       # flash the dongle (enter BOOT download mode f
 
 Or open the folder in VS Code with the **PlatformIO IDE** extension for a GUI — same project.
 
+> **Dongle flashing:** the T-Dongle S3 has no auto-reset. Hold **BOOT** while plugging
+> in to flash, then **unplug/replug** to run the new firmware. See
+> [docs/wiring.md](docs/wiring.md). The CoreS3 flashes normally over USB-C.
+
 ## Toolchain
 
 Uses the [pioarduino](https://github.com/pioarduino/platform-espressif32) platform fork
